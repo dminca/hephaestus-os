@@ -2,6 +2,7 @@
 set -euo pipefail
 
 assets=/usr/share/hephaestus
+export PATH="/usr/libexec/hephaestus/bin:$PATH"
 plugins="$assets/nvim/plugins"
 temporary=$(mktemp -d)
 trap 'rm -rf "$temporary"' EXIT
@@ -45,6 +46,7 @@ cargo build --locked --release --manifest-path "$plugins/cord.nvim/Cargo.toml" \
 install -Dm755 "$temporary/cord-target/release/cord" /usr/libexec/hephaestus/cord/bin/cord
 
 tree-sitter --version
+test "$(tree-sitter --version | cut -d ' ' -f 2)" = "0.26.1"
 nvim --headless -u NONE -l "$assets/build-parsers.lua"
 
 GOBIN=/usr/bin go install golang.org/x/tools/cmd/goimports@v0.31.0

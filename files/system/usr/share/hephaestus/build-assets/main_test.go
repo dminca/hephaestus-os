@@ -102,6 +102,33 @@ func TestWriteExecutableRefusesExistingPaths(t *testing.T) {
 	}
 }
 
+func TestPinnedExecutableCoexistsWithDistributionBinary(t *testing.T) {
+	root := t.TempDir()
+	distributionDirectory := filepath.Join(root, "usr/bin")
+	pinnedDirectory := filepath.Join(root, strings.TrimPrefix(binariesDirectory, "/"))
+	for _, directory := range []string{distributionDirectory, pinnedDirectory} {
+		if err := os.MkdirAll(directory, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	distributionBinary := filepath.Join(distributionDirectory, "tree-sitter")
+	original := []byte("distribution-managed executable")
+	if err := os.WriteFile(distributionBinary, original, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	pinnedBinary := filepath.Join(pinnedDirectory, "tree-sitter")
+	if err := writeExecutable(pinnedBinary, linuxExecutable()); err != nil {
+		t.Fatalf("pinned executable collided with distribution package: %v", err)
+	}
+	content, err := os.ReadFile(distributionBinary)
+	if err != nil || !bytes.Equal(content, original) {
+		t.Fatalf("distribution executable changed: %v", err)
+	}
+	if err := writeExecutable(pinnedBinary, linuxExecutable()); err == nil {
+		t.Fatal("isolation must not disable overwrite protection")
+	}
+}
+
 func TestBinaryVerificationCommand(t *testing.T) {
 	download := compress(t, linuxExecutable())
 	stubDownload(t, download)

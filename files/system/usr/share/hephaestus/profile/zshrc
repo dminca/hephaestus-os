@@ -15,7 +15,7 @@ export RIPGREP_CONFIG_PATH="${XDG_CONFIG_HOME:-$HOME/.config}/ripgrep/config"
 export BAT_CONFIG_PATH="${XDG_CONFIG_HOME:-$HOME/.config}/bat/config"
 export BAT_CACHE_PATH=/usr/share/hephaestus/bat
 typeset -U path
-path=("$HOME/.local/bin" "$GOPATH/bin" $path)
+path=("$HOME/.local/bin" "$GOPATH/bin" /usr/libexec/hephaestus/bin $path)
 export FZF_CTRL_T_COMMAND='fd --type file --follow --hidden --exclude .git'
 
 bindkey '\e[1;3D' backward-word

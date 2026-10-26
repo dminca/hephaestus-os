@@ -91,4 +91,29 @@ func TestProfileBuildUsesLockedTreeSitter(t *testing.T) {
 	if buildPosition < 0 || sourcesPosition <= buildPosition || installPosition <= sourcesPosition {
 		t.Fatal("Go asset installer must be built before fetching sources and binaries")
 	}
+	if !strings.Contains(script, `export PATH="/usr/libexec/hephaestus/bin:$PATH"`) {
+		t.Fatal("image build must prefer pinned executables over distribution packages")
+	}
+	if !strings.Contains(script, `test "$(tree-sitter --version | cut -d ' ' -f 2)" = "0.26.1"`) {
+		t.Fatal("parser build must check the required Tree-sitter version")
+	}
+}
+
+func TestProfilesUseIsolatedExecutables(t *testing.T) {
+	root := repository(t)
+	profile := filepath.Join(root, "files/system/usr/share/hephaestus/profile")
+	zsh := readFile(t, filepath.Join(profile, "zshrc"))
+	if !strings.Contains(zsh, `"$GOPATH/bin" /usr/libexec/hephaestus/bin $path`) {
+		t.Fatal("Zsh must find pinned tools before distribution executables")
+	}
+	init := readFile(t, filepath.Join(profile, "config/nvim/init.lua"))
+	if !strings.Contains(init, `vim.env.PATH = "/usr/libexec/hephaestus/bin:"`) {
+		t.Fatal("Neovim launched outside Zsh must also find pinned tools")
+	}
+	plugins := readFile(t, filepath.Join(profile, "config/nvim/lua/hephaestus/plugins.lua"))
+	for _, name := range []string{"tinymist", "websocat"} {
+		if !strings.Contains(plugins, `"/usr/libexec/hephaestus/bin/`+name+`"`) {
+			t.Fatalf("Typst preview must use isolated %s", name)
+		}
+	}
 }
