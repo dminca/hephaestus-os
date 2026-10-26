@@ -1,0 +1,24 @@
+{
+  "name": "hephaestus-editor-tools",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Image-built native Neovim language servers and preview tools",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@biomejs/biome": "2.6.3",
+    "@mermaid-js/mermaid-cli": "12.0.0",
+    "@tailwindcss/language-server": "0.16.0",
+    "bash-language-server": "5.8.1",
+    "emmet-ls": "0.4.2",
+    "fixjson": "1.1.2",
+    "pyright": "1.1.414",
+    "svelte-language-server": "0.18.5",
+    "typescript": "6.0.3",
+    "typescript-language-server": "6.0.2",
+    "vscode-langservers-extracted": "4.10.0",
+    "yaml-language-server": "2.0.0",
+    "yarn": "1.22.22"
+  }
+}

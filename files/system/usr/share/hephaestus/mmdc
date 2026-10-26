@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+export PUPPETEER_EXECUTABLE_PATH="${PUPPETEER_EXECUTABLE_PATH:-/usr/bin/trivalent}"
+exec /usr/share/hephaestus/node/node_modules/.bin/mmdc "$@"
