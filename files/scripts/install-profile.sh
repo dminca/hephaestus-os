@@ -18,8 +18,13 @@ CGO_ENABLED=0 GOTOOLCHAIN=local go build -trimpath \
   -o "$temporary/hephaestus-profile" "$assets/installer/main.go"
 install -m755 "$temporary/hephaestus-profile" /usr/bin/hephaestus-profile
 
-python3 "$assets/fetch-profile.py"
-python3 "$assets/install-binaries.py"
+(
+  cd "$assets/build-assets"
+  CGO_ENABLED=0 GO111MODULE=off GOTOOLCHAIN=local go build -trimpath \
+    -o "$temporary/hephaestus-assets" .
+)
+"$temporary/hephaestus-assets" sources
+"$temporary/hephaestus-assets" binaries
 
 npm ci --prefix "$assets/node" --omit=dev --no-audit --no-fund
 for binary in bash-language-server typescript-language-server tsserver tsc \

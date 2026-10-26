@@ -2,10 +2,34 @@ package tests
 
 import (
 	"encoding/json"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 )
+
+func TestNoRepositoryPythonScripts(t *testing.T) {
+	command := exec.Command("git", "ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", "*.py", "*.pyw", "*.pyi")
+	command.Dir = repository(t)
+	output, err := command.CombinedOutput()
+	if err != nil {
+		t.Fatalf("list repository Python files: %v\n%s", err, output)
+	}
+	for _, name := range strings.Split(string(output), "\x00") {
+		if name == "" {
+			continue
+		}
+		_, err := os.Lstat(filepath.Join(command.Dir, name))
+		if os.IsNotExist(err) {
+			continue
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Errorf("repository Python file remains: %s", name)
+	}
+}
 
 func TestProfileBuildUsesLockedTreeSitter(t *testing.T) {
 	root := repository(t)
@@ -50,7 +74,12 @@ func TestProfileBuildUsesLockedTreeSitter(t *testing.T) {
 	if strings.Contains(script, "cargo install --locked tree-sitter-cli") {
 		t.Fatal("build still depends on the unavailable crates.io release")
 	}
-	installPosition := strings.Index(script, `python3 "$assets/install-binaries.py"`)
+	if strings.Contains(script, ".py") {
+		t.Fatal("profile build still invokes a repository Python script")
+	}
+	buildPosition := strings.Index(script, `-o "$temporary/hephaestus-assets" .`)
+	sourcesPosition := strings.Index(script, `"$temporary/hephaestus-assets" sources`)
+	installPosition := strings.Index(script, `"$temporary/hephaestus-assets" binaries`)
 	versionPosition := strings.Index(script, "tree-sitter --version")
 	parserPosition := strings.Index(script, `nvim --headless -u NONE -l "$assets/build-parsers.lua"`)
 	if installPosition < 0 || versionPosition < 0 || parserPosition < 0 {
@@ -58,5 +87,8 @@ func TestProfileBuildUsesLockedTreeSitter(t *testing.T) {
 	}
 	if installPosition >= versionPosition || versionPosition >= parserPosition {
 		t.Fatal("locked Tree-sitter must be installed and checked before building parsers")
+	}
+	if buildPosition < 0 || sourcesPosition <= buildPosition || installPosition <= sourcesPosition {
+		t.Fatal("Go asset installer must be built before fetching sources and binaries")
 	}
 }
