@@ -101,6 +101,16 @@
         "ziggity"
       ],
       "license": "MIT"
+    },
+    {
+      "repository": "pranshuparmar/witr",
+      "version": "v0.3.4",
+      "url": "https://github.com/pranshuparmar/witr/releases/download/v0.3.4/witr-linux-amd64",
+      "sha256": "d99098c61002f9b8a5337977d527dbe8ee29453f2a62c531038ea2749ea738eb",
+      "binaries": [
+        "witr"
+      ],
+      "license": "MIT"
     }
   ]
 }

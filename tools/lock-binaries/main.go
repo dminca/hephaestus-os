@@ -68,6 +68,11 @@ var artifacts = []artifactSpec{
 		filename: "ziggity-v0.54.0-x86_64-linux-musl.tar.gz",
 		binaries: []string{"ziggity"}, license: "MIT",
 	},
+	{
+		repository: "pranshuparmar/witr", version: "v0.3.4",
+		filename: "witr-linux-amd64",
+		binaries: []string{"witr"}, license: "MIT",
+	},
 }
 
 type binaryPin struct {
