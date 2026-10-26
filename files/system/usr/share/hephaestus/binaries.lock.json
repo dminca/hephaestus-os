@@ -1,0 +1,96 @@
+{
+  "architecture": "x86_64",
+  "artifacts": [
+    {
+      "repository": "sxyazi/yazi",
+      "version": "v26.9.1",
+      "url": "https://github.com/sxyazi/yazi/releases/download/v26.9.1/yazi-x86_64-unknown-linux-musl.zip",
+      "sha256": "9b9c39decccf8cb0ff53a7d637d38f8a79d93bbd0099f4ea9c619ef6bb392f5d",
+      "binaries": [
+        "yazi",
+        "ya"
+      ],
+      "license": "MIT"
+    },
+    {
+      "repository": "JohnnyMorganz/StyLua",
+      "version": "v2.6.0",
+      "url": "https://github.com/JohnnyMorganz/StyLua/releases/download/v2.6.0/stylua-linux-x86_64-musl.zip",
+      "sha256": "48ee7db28346f96f4bd545e190ab080a88a7b5a664e97649cf5d5c60426f402d",
+      "binaries": [
+        "stylua"
+      ],
+      "license": "MPL-2.0"
+    },
+    {
+      "repository": "anordal/shellharden",
+      "version": "v4.3.2",
+      "url": "https://github.com/anordal/shellharden/releases/download/v4.3.2/shellharden-x86_64-unknown-linux-musl.tar.gz",
+      "sha256": "270527e7cb76f39d980914d93b235ff056bfda22bb85de53469c7f2d42bf3751",
+      "binaries": [
+        "shellharden"
+      ],
+      "license": "MPL-2.0"
+    },
+    {
+      "repository": "tamasfe/taplo",
+      "version": "0.10.0",
+      "url": "https://github.com/tamasfe/taplo/releases/download/0.10.0/taplo-linux-x86_64.gz",
+      "sha256": "8fe196b894ccf9072f98d4e1013a180306e17d244830b03986ee5e8eabeb6156",
+      "binaries": [
+        "taplo"
+      ],
+      "license": "MIT"
+    },
+    {
+      "repository": "tekumara/typos-lsp",
+      "version": "v0.1.57",
+      "url": "https://github.com/tekumara/typos-lsp/releases/download/v0.1.57/typos-lsp-v0.1.57-x86_64-unknown-linux-musl.tar.gz",
+      "sha256": "8ef0418f6201e845383ee31be74da8691dec5d9f64554aee5d5befe8fda9d5cd",
+      "binaries": [
+        "typos-lsp"
+      ],
+      "license": "MIT"
+    },
+    {
+      "repository": "Myriad-Dreamin/tinymist",
+      "version": "v0.15.10",
+      "url": "https://github.com/Myriad-Dreamin/tinymist/releases/download/v0.15.10/tinymist-x86_64-unknown-linux-musl.tar.gz",
+      "sha256": "91f016615d106fe4678a80e087b083eca91bba5e5da8c1b5f8ba411e81e37278",
+      "binaries": [
+        "tinymist"
+      ],
+      "license": "Apache-2.0"
+    },
+    {
+      "repository": "typstyle-rs/typstyle",
+      "version": "v0.15.2",
+      "url": "https://github.com/typstyle-rs/typstyle/releases/download/v0.15.2/typstyle-x86_64-unknown-linux-musl",
+      "sha256": "4a00dc3270bbc545fb05d8d1c272f352ce68bf9e06d1cceba0126b4bcc1140ff",
+      "binaries": [
+        "typstyle"
+      ],
+      "license": "Apache-2.0"
+    },
+    {
+      "repository": "vi/websocat",
+      "version": "v1.14.1",
+      "url": "https://github.com/vi/websocat/releases/download/v1.14.1/websocat.x86_64-unknown-linux-musl",
+      "sha256": "66f8dd3a0394761556339117f8bb5123bddefd44e087af2a72ec22b0bd08d514",
+      "binaries": [
+        "websocat"
+      ],
+      "license": "MIT"
+    },
+    {
+      "repository": "simoarpe/ziggity",
+      "version": "v0.54.0",
+      "url": "https://github.com/simoarpe/ziggity/releases/download/v0.54.0/ziggity-v0.54.0-x86_64-linux-musl.tar.gz",
+      "sha256": "2387eb879f5119023b6e545dda1ff1346180bbe03e8aec87986699a78c1b6068",
+      "binaries": [
+        "ziggity"
+      ],
+      "license": "MIT"
+    }
+  ]
+}

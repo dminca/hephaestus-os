@@ -1,0 +1,86 @@
+autoload -Uz compinit
+compinit
+setopt AUTO_CD BANG_HIST HIST_IGNORE_SPACE HIST_IGNORE_DUPS HIST_IGNORE_ALL_DUPS
+setopt HIST_EXPIRE_DUPS_FIRST EXTENDED_HISTORY SHARE_HISTORY INC_APPEND_HISTORY
+setopt HIST_FIND_NO_DUPS HIST_SAVE_NO_DUPS HIST_REDUCE_BLANKS HIST_VERIFY HIST_BEEP
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=10000000
+SAVEHIST=10000000
+
+export EDITOR=nvim VISUAL=nvim
+export GOPATH="${GOPATH:-$HOME/go}"
+export SOPS_AGE_KEY_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/sops/age/keys.txt"
+export ZIGGITY_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/ziggity/config.ini"
+export RIPGREP_CONFIG_PATH="${XDG_CONFIG_HOME:-$HOME/.config}/ripgrep/config"
+export BAT_CONFIG_PATH="${XDG_CONFIG_HOME:-$HOME/.config}/bat/config"
+export BAT_CACHE_PATH=/usr/share/hephaestus/bat
+typeset -U path
+path=("$HOME/.local/bin" "$GOPATH/bin" $path)
+export FZF_CTRL_T_COMMAND='fd --type file --follow --hidden --exclude .git'
+
+bindkey '\e[1;3D' backward-word
+bindkey '\e[1;3C' forward-word
+bindkey '\e[1;9D' backward-word
+bindkey '\e[1;9C' forward-word
+
+alias g='git' gaa='git add --all' gcs='git commit -s -v'
+alias gb='git branch' gba='git branch -a' gsw='git switch' gswc='git switch -c'
+alias gss='git status -s' gst='git status' gco='git checkout'
+alias glol="git log --graph --pretty='%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset'"
+alias glols="git log --graph --pretty='%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --stat"
+alias glod="git log --graph --pretty='%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ad) %C(bold blue)<%an>%Creset'"
+alias glods="git log --graph --pretty='%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ad) %C(bold blue)<%an>%Creset' --date=short"
+alias glola="git log --graph --pretty='%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --all"
+alias glog='git log --oneline --decorate --graph' gloga='git log --oneline --decorate --graph --all'
+alias gpv='git push -v' gl='git pull' gd='git diff' gds='git diff --staged'
+alias gdt='git diff-tree --no-commit-id --name-only -r' gdw='git diff --word-diff'
+alias gwch='git whatchanged -p --abbrev-commit --pretty=medium'
+alias 'gca!=git commit -v -a --amend'
+alias gmt='git mergetool --no-prompt' grba='git rebase --abort' grbc='git rebase --continue'
+alias gbd='git branch | gum choose --no-limit | xargs git branch -D'
+alias ls='eza --git --icons=auto --group-directories-first --header'
+alias ll='eza --git --icons=auto --group-directories-first --header -l'
+alias la='eza --git --icons=auto --group-directories-first --header -a'
+alias lla='eza --git --icons=auto --group-directories-first --header -la'
+alias lt='eza --git --icons=auto --group-directories-first --header --tree'
+alias fd='fd --no-ignore --absolute-path'
+
+function yy() {
+  local temporary cwd
+  temporary=$(mktemp) || return
+  yazi "$@" --cwd-file="$temporary"
+  local result=$?
+  cwd=$(cat -- "$temporary")
+  rm -f -- "$temporary"
+  if [[ $result == 0 && -n "$cwd" && "$cwd" != "$PWD" ]]; then
+    builtin cd -- "$cwd"
+  fi
+  return $result
+}
+
+for tool in fzf zoxide atuin powerline-go; do
+  if ! (( $+commands[$tool] )); then
+    print -u2 "Hephaestus: required shell tool is missing: $tool"
+  fi
+done
+if (( $+commands[fzf] )); then
+  source <(fzf --zsh)
+fi
+if (( $+commands[zoxide] )); then
+  eval "$(zoxide init zsh)"
+fi
+if (( $+commands[atuin] )); then
+  eval "$(atuin init zsh --disable-up-arrow)"
+fi
+function _hephaestus_prompt() {
+  local previous_status=$?
+  if (( $+commands[powerline-go] )); then
+    PS1="$(powerline-go -error "$previous_status" -jobs "${#jobstates}" -cwd-max-depth 2 \
+      -modules user,host,ssh,cwd,perms,git,hg,jobs,exit,root)"
+  fi
+}
+autoload -Uz add-zsh-hook
+add-zsh-hook precmd _hephaestus_prompt
+
+source "${HEPHAESTUS_ZSH_PLUGIN_ROOT:-/usr/share}/zsh-autosuggestions/zsh-autosuggestions.zsh"
+source "${HEPHAESTUS_ZSH_PLUGIN_ROOT:-/usr/share}/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
