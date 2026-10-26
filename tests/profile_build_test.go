@@ -110,10 +110,26 @@ func TestProfilesUseIsolatedExecutables(t *testing.T) {
 	if !strings.Contains(init, `vim.env.PATH = "/usr/libexec/hephaestus/bin:"`) {
 		t.Fatal("Neovim launched outside Zsh must also find pinned tools")
 	}
+	if !strings.Contains(init, `vim.treesitter.language.register("json", "jsonc")`) {
+		t.Fatal("JSONC filetype must use the JSON parser")
+	}
 	plugins := readFile(t, filepath.Join(profile, "config/nvim/lua/hephaestus/plugins.lua"))
 	for _, name := range []string{"tinymist", "websocat"} {
 		if !strings.Contains(plugins, `"/usr/libexec/hephaestus/bin/`+name+`"`) {
 			t.Fatalf("Typst preview must use isolated %s", name)
+		}
+	}
+
+}
+
+func TestCustomToolsDoNotOverwriteDistributionPackages(t *testing.T) {
+	root := repository(t)
+	script := readFile(t, filepath.Join(root, "files/scripts/install-profile.sh"))
+	for _, obsolete := range []string{
+		`"/usr/bin/$binary"`, "/usr/bin/mmdc", "GOBIN=/usr/bin", "/usr/bin/yamlfix",
+	} {
+		if strings.Contains(script, obsolete) {
+			t.Errorf("custom tool installation still writes distribution path %s", obsolete)
 		}
 	}
 }
