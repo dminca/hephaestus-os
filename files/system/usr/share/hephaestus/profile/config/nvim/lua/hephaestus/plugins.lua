@@ -183,7 +183,10 @@ return {
   } },
   { "ellisonleao/glow.nvim", cmd = "Glow", opts = {} },
   { "chomosuke/typst-preview.nvim", opts = {
-    dependencies_bin = { tinymist = "/usr/bin/tinymist", websocat = "/usr/bin/websocat" },
+    dependencies_bin = {
+      tinymist = "/usr/libexec/hephaestus/bin/tinymist",
+      websocat = "/usr/libexec/hephaestus/bin/websocat",
+    },
   } },
   { "mistweaverco/kulala.nvim", ft = { "http", "rest" }, opts = {
     global_keymaps = true, global_keymaps_prefix = "<leader>R", kulala_keymaps_prefix = "",

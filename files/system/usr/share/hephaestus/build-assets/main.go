@@ -15,6 +15,7 @@ import (
 )
 
 const assetsDirectory = "/usr/share/hephaestus"
+const binariesDirectory = "/usr/libexec/hephaestus/bin"
 
 func main() {
 	if err := run(os.Args[1:], os.Stdout); err != nil {
@@ -45,7 +46,7 @@ func run(arguments []string, output io.Writer) error {
 	case "binaries":
 		flags := flag.NewFlagSet("binaries", flag.ContinueOnError)
 		lock := flags.String("lock", filepath.Join(assetsDirectory, "binaries.lock.json"), "binary lock file")
-		destination := flags.String("destination", "/usr/bin", "executable directory")
+		destination := flags.String("destination", binariesDirectory, "executable directory")
 		verifyOnly := flags.Bool("verify-only", false, "verify downloads without installing or requiring a Linux host")
 		if err := flags.Parse(arguments[1:]); err != nil {
 			return err
