@@ -30,6 +30,15 @@ To rebase an existing atomic Fedora installation to the latest build:
 
 The `latest` tag will automatically point to the latest build. That build will still always use the Fedora version specified in `recipe.yml`, so you won't get accidentally updated to the next major version.
 
+## Desktop preferences
+
+On the first Plasma login after deploying the image, a native Plasma update script
+enables seconds on existing digital clock widgets and maps Caps Lock to Escape.
+Other widgets, keyboard layouts, and unrelated XKB options are preserved.
+The keyboard change may require one additional logout/login to take effect.
+These are saved per-user preferences, applied once rather than forced on every
+login; they can subsequently be changed in KDE settings.
+
 ## ISO
 
 If build on Fedora Atomic, you can generate an offline ISO with the instructions available [here](https://blue-build.org/how-to/generate-iso/#_top). These ISOs cannot unfortunately be distributed on GitHub for free due to large sizes, so for public projects something else has to be used for hosting.
