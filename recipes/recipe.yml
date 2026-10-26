@@ -79,6 +79,8 @@ modules:
     notify: true
     system:
       repo-name: flathub
+      install:
+        - com.nextcloud.desktopclient.nextcloud
       remove:
         - org.mozilla.firefox
     user:

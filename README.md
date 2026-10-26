@@ -39,6 +39,16 @@ The keyboard change may require one additional logout/login to take effect.
 These are saved per-user preferences, applied once rather than forced on every
 login; they can subsequently be changed in KDE settings.
 
+An additional Plasma update enables key repeat with a **233 ms delay** and
+**17 repeats/s**. Log out and back in again if the active session has not picked
+up the new values.
+
+The Nextcloud desktop sync client (`com.nextcloud.desktopclient.nextcloud`) is
+installed system-wide from Flathub and starts in the background at desktop login.
+After its initial Flatpak installation completes, log out and back in to start it,
+or open Nextcloud manually. Account setup and sync folders remain per-user.
+An existing user autostart override can disable the system autostart entry.
+
 ## ISO
 
 If build on Fedora Atomic, you can generate an offline ISO with the instructions available [here](https://blue-build.org/how-to/generate-iso/#_top). These ISOs cannot unfortunately be distributed on GitHub for free due to large sizes, so for public projects something else has to be used for hosting.
