@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Nextcloud Desktop
+Comment=Start the Nextcloud desktop sync client
+Exec=/usr/bin/flatpak run com.nextcloud.desktopclient.nextcloud --background
+TryExec=/usr/bin/flatpak
+Icon=com.nextcloud.desktopclient.nextcloud
+Terminal=false
