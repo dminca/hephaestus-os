@@ -33,9 +33,9 @@ for binary in bash-language-server typescript-language-server tsserver tsc \
   vscode-json-language-server tailwindcss-language-server svelteserver yaml-language-server \
   emmet-ls biome pyright pyright-langserver fixjson; do
   test -x "$assets/node/node_modules/.bin/$binary"
-  ln -s "$assets/node/node_modules/.bin/$binary" "/usr/bin/$binary"
+  ln -s "$assets/node/node_modules/.bin/$binary" "/usr/libexec/hephaestus/bin/$binary"
 done
-install -m 0755 "$assets/mmdc" /usr/bin/mmdc
+install -m 0755 "$assets/mmdc" /usr/libexec/hephaestus/bin/mmdc
 
 node "$assets/node/node_modules/yarn/bin/yarn.js" \
   --cwd "$plugins/markdown-preview.nvim/app" install \
@@ -49,10 +49,10 @@ tree-sitter --version
 test "$(tree-sitter --version | cut -d ' ' -f 2)" = "0.26.1"
 nvim --headless -u NONE -l "$assets/build-parsers.lua"
 
-GOBIN=/usr/bin go install golang.org/x/tools/cmd/goimports@v0.31.0
+GOBIN=/usr/libexec/hephaestus/bin go install golang.org/x/tools/cmd/goimports@v0.31.0
 python3 -m venv /usr/libexec/hephaestus/python
 /usr/libexec/hephaestus/python/bin/pip install --disable-pip-version-check 'yamlfix==1.19.1'
-ln -s /usr/libexec/hephaestus/python/bin/yamlfix /usr/bin/yamlfix
+ln -s /usr/libexec/hephaestus/python/bin/yamlfix /usr/libexec/hephaestus/bin/yamlfix
 
 install -Dm644 "$plugins/bat/themes/Catppuccin Mocha.tmTheme" \
   "$assets/profile/config/bat/themes/CatppuccinMocha.tmTheme"
