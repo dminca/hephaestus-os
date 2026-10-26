@@ -229,7 +229,7 @@ func checkLockScenario(t *testing.T, binary, tool string, scenario lockScenario)
 			t.Fatal("source revision changed")
 		}
 	} else {
-		if strings.Count(content, `"repository"`) != 9 {
+		if strings.Count(content, `"repository"`) != 10 {
 			t.Fatal("binary artifact count changed")
 		}
 		if !strings.Contains(content, `"architecture": "x86_64"`) {

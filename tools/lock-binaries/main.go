@@ -19,6 +19,11 @@ type artifactSpec struct {
 
 var artifacts = []artifactSpec{
 	{
+		repository: "tree-sitter/tree-sitter", version: "v0.26.1",
+		filename: "tree-sitter-linux-x64.gz",
+		binaries: []string{"tree-sitter"}, license: "MIT",
+	},
+	{
 		repository: "sxyazi/yazi", version: "v26.9.1",
 		filename: "yazi-x86_64-unknown-linux-musl.zip",
 		binaries: []string{"yazi", "ya"}, license: "MIT",
