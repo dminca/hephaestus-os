@@ -11,7 +11,7 @@ func TestIncompleteReleaseMetadataPreservesLock(t *testing.T) {
 	for name, response := range map[string]string{
 		"MalformedJSON": "{",
 		"MissingAssets": `{}`,
-		"MissingURL":    `{"assets":[{"name":"yazi-x86_64-unknown-linux-musl.zip"}]}`,
+		"MissingURL":    `{"assets":[{"name":"tree-sitter-linux-x64.gz"}]}`,
 	} {
 		t.Run(name, func(t *testing.T) {
 			root := t.TempDir()
@@ -42,6 +42,9 @@ func TestIncompleteReleaseMetadataPreservesLock(t *testing.T) {
 			}
 			if strings.HasPrefix(err.Error(), "download ") {
 				t.Fatalf("invalid metadata reached download step: %v", err)
+			}
+			if name == "MissingURL" && !strings.Contains(err.Error(), "missing a valid HTTPS download URL") {
+				t.Fatalf("expected missing download URL error, got %v", err)
 			}
 			saved, err := os.ReadFile(path)
 			if err != nil || string(saved) != "previous reviewed lock\n" {

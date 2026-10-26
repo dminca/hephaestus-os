@@ -39,8 +39,7 @@ cargo build --locked --release --manifest-path "$plugins/cord.nvim/Cargo.toml" \
   --target-dir "$temporary/cord-target"
 install -Dm755 "$temporary/cord-target/release/cord" /usr/libexec/hephaestus/cord/bin/cord
 
-cargo install --locked tree-sitter-cli --version 0.26.1 --root "$temporary/tree-sitter"
-install -m755 "$temporary/tree-sitter/bin/tree-sitter" /usr/bin/tree-sitter
+tree-sitter --version
 nvim --headless -u NONE -l "$assets/build-parsers.lua"
 
 GOBIN=/usr/bin go install golang.org/x/tools/cmd/goimports@v0.31.0
