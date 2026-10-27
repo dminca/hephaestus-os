@@ -73,6 +73,11 @@ var artifacts = []artifactSpec{
 		filename: "witr-linux-amd64",
 		binaries: []string{"witr"}, license: "MIT",
 	},
+	{
+		repository: "modem-dev/hunk", version: "v0.24.1",
+		filename: "hunkdiff-linux-x64.tar.gz",
+		binaries: []string{"hunk"}, license: "MIT",
+	},
 }
 
 type binaryPin struct {

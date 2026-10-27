@@ -111,6 +111,16 @@
         "witr"
       ],
       "license": "MIT"
+    },
+    {
+      "repository": "modem-dev/hunk",
+      "version": "v0.24.1",
+      "url": "https://github.com/modem-dev/hunk/releases/download/v0.24.1/hunkdiff-linux-x64.tar.gz",
+      "sha256": "4b8c98f8d97745499916cc1e1d2f27ffd258c6d6358dd4532f61e41c5eb19692",
+      "binaries": [
+        "hunk"
+      ],
+      "license": "MIT"
     }
   ]
 }

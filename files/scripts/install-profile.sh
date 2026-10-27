@@ -27,6 +27,7 @@ install -m755 "$temporary/hephaestus-profile" /usr/bin/hephaestus-profile
 "$temporary/hephaestus-assets" sources
 "$temporary/hephaestus-assets" binaries
 witr --version
+hunk --version
 
 npm ci --prefix "$assets/node" --omit=dev --no-audit --no-fund
 for binary in bash-language-server typescript-language-server tsserver tsc \
