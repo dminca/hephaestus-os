@@ -99,6 +99,45 @@ func TestProfileBuildUsesLockedTreeSitter(t *testing.T) {
 	}
 }
 
+func TestProfileBuildInstallsHunk(t *testing.T) {
+	root := repository(t)
+	var lock struct {
+		Artifacts []struct {
+			Repository string   `json:"repository"`
+			Version    string   `json:"version"`
+			URL        string   `json:"url"`
+			SHA256     string   `json:"sha256"`
+			Binaries   []string `json:"binaries"`
+		} `json:"artifacts"`
+	}
+	if err := json.Unmarshal([]byte(readFile(t, filepath.Join(root,
+		"files/system/usr/share/hephaestus/binaries.lock.json"))), &lock); err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, artifact := range lock.Artifacts {
+		if artifact.Repository != "modem-dev/hunk" {
+			continue
+		}
+		found = true
+		if artifact.Version != "v0.24.1" ||
+			artifact.URL != "https://github.com/modem-dev/hunk/releases/download/v0.24.1/hunkdiff-linux-x64.tar.gz" ||
+			artifact.SHA256 != "4b8c98f8d97745499916cc1e1d2f27ffd258c6d6358dd4532f61e41c5eb19692" ||
+			len(artifact.Binaries) != 1 || artifact.Binaries[0] != "hunk" {
+			t.Fatal("Hunk differs from the reviewed Linux release")
+		}
+	}
+	if !found {
+		t.Fatal("Hunk is missing from the binary lock")
+	}
+	script := readFile(t, filepath.Join(root, "files/scripts/install-profile.sh"))
+	install := strings.Index(script, `"$temporary/hephaestus-assets" binaries`)
+	check := strings.Index(script, "hunk --version")
+	if install < 0 || check <= install {
+		t.Fatal("Hunk must be installed before its version is checked")
+	}
+}
+
 func TestProfilesUseIsolatedExecutables(t *testing.T) {
 	root := repository(t)
 	profile := filepath.Join(root, "files/system/usr/share/hephaestus/profile")

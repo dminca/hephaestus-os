@@ -30,6 +30,15 @@ To rebase an existing atomic Fedora installation to the latest build:
 
 The `latest` tag will automatically point to the latest build. That build will still always use the Fedora version specified in `recipe.yml`, so you won't get accidentally updated to the next major version.
 
+## Hunk
+
+The image includes [Hunk](https://github.com/modem-dev/hunk) v0.24.1 as a
+checksum-verified standalone executable at `/usr/libexec/hephaestus/bin/hunk`.
+The managed Zsh profile includes this directory in PATH. Run `hunk diff` to
+review changes. Update its pin in `tools/lock-binaries/main.go`, regenerate
+`binaries.lock.json` with `go run ./tools/lock-binaries`, and rebuild the image;
+do not use `hunk update` to modify the immutable image installation.
+
 ## Desktop preferences
 
 On the first Plasma login after deploying the image, a native Plasma update script
