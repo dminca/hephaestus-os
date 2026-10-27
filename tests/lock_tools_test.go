@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -40,6 +41,28 @@ type sourcePinFixture struct {
 	Revision string `json:"revision"`
 	URL      string `json:"url"`
 	SHA256   string `json:"sha256"`
+}
+
+type binaryLockFixture struct {
+	Architecture string `json:"architecture"`
+	Artifacts    []struct {
+		Repository string   `json:"repository"`
+		Version    string   `json:"version"`
+		URL        string   `json:"url"`
+		SHA256     string   `json:"sha256"`
+		Binaries   []string `json:"binaries"`
+		License    string   `json:"license"`
+	} `json:"artifacts"`
+}
+
+func committedBinaryLock(t *testing.T) binaryLockFixture {
+	t.Helper()
+	var lock binaryLockFixture
+	content := readFile(t, filepath.Join(repository(t), "files/system/usr/share/hephaestus/binaries.lock.json"))
+	if err := json.Unmarshal([]byte(content), &lock); err != nil {
+		t.Fatal(err)
+	}
+	return lock
 }
 
 type lockScenario struct {
@@ -95,17 +118,7 @@ func prepareBinaryLock(t *testing.T, assets, api, scenario, checksum string) str
 	t.Helper()
 	path := filepath.Join(assets, "binaries.lock.json")
 	writeFile(t, path, "previous reviewed lock\n", 0o644)
-	var existing struct {
-		Artifacts []struct {
-			Repository string `json:"repository"`
-			Version    string `json:"version"`
-			URL        string `json:"url"`
-		} `json:"artifacts"`
-	}
-	content := readFile(t, filepath.Join(repository(t), "files/system/usr/share/hephaestus/binaries.lock.json"))
-	if err := json.Unmarshal([]byte(content), &existing); err != nil {
-		t.Fatal(err)
-	}
+	existing := committedBinaryLock(t)
 	for _, artifact := range existing.Artifacts {
 		digest := "sha256:" + checksum
 		name := filepath.Base(artifact.URL)
@@ -229,11 +242,16 @@ func checkLockScenario(t *testing.T, binary, tool string, scenario lockScenario)
 			t.Fatal("source revision changed")
 		}
 	} else {
-		if strings.Count(content, `"repository"`) != 12 {
-			t.Fatal("binary artifact count changed")
+		expected := committedBinaryLock(t)
+		for i := range expected.Artifacts {
+			expected.Artifacts[i].SHA256 = checksum
 		}
-		if !strings.Contains(content, `"architecture": "x86_64"`) {
-			t.Fatal("binary architecture changed")
+		var actual binaryLockFixture
+		if err := json.Unmarshal([]byte(content), &actual); err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(actual, expected) {
+			t.Fatalf("generated binary metadata differs from the committed lock:\ngot: %+v\nwant: %+v", actual, expected)
 		}
 	}
 	if scenario.name == "ReusesExistingPins" && readFile(t, log) != "" {

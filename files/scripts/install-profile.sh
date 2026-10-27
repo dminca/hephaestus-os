@@ -48,7 +48,8 @@ cargo build --locked --release --manifest-path "$plugins/cord.nvim/Cargo.toml" \
 install -Dm755 "$temporary/cord-target/release/cord" /usr/libexec/hephaestus/cord/bin/cord
 
 tree-sitter --version
-test "$(tree-sitter --version | cut -d ' ' -f 2)" = "0.26.1"
+expected_tree_sitter_version=$("$temporary/hephaestus-assets" binary-version tree-sitter)
+test "$(tree-sitter --version | cut -d ' ' -f 2)" = "$expected_tree_sitter_version"
 nvim --headless -u NONE -l "$assets/build-parsers.lua"
 
 GOBIN=/usr/libexec/hephaestus/bin go install golang.org/x/tools/cmd/goimports@v0.31.0

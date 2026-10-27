@@ -29,7 +29,7 @@ func main() {
 
 func run(arguments []string, output io.Writer) error {
 	if len(arguments) == 0 {
-		return errors.New("usage: hephaestus-assets <sources|binaries> [options]")
+		return errors.New("usage: hephaestus-assets <sources|binaries|binary-version> [options]")
 	}
 	switch arguments[0] {
 	case "sources":
@@ -43,6 +43,21 @@ func run(arguments []string, output io.Writer) error {
 			return errors.New("sources does not accept positional arguments")
 		}
 		return installSources(*lock, *destination, output)
+	case "binary-version":
+		flags := flag.NewFlagSet("binary-version", flag.ContinueOnError)
+		lock := flags.String("lock", filepath.Join(assetsDirectory, "binaries.lock.json"), "binary lock file")
+		if err := flags.Parse(arguments[1:]); err != nil {
+			return err
+		}
+		if flags.NArg() != 1 {
+			return errors.New("binary-version requires one executable name")
+		}
+		version, err := lockedBinaryVersion(*lock, flags.Arg(0))
+		if err != nil {
+			return err
+		}
+		_, err = fmt.Fprintln(output, version)
+		return err
 	case "binaries":
 		flags := flag.NewFlagSet("binaries", flag.ContinueOnError)
 		lock := flags.String("lock", filepath.Join(assetsDirectory, "binaries.lock.json"), "binary lock file")

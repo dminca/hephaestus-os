@@ -29,6 +29,37 @@ type binaryLock struct {
 	Artifacts    []binaryArtifact `json:"artifacts"`
 }
 
+func lockedBinaryVersion(lockPath, name string) (string, error) {
+	var lock binaryLock
+	if err := readLock(lockPath, &lock); err != nil {
+		return "", err
+	}
+	if lock.Architecture != "x86_64" || len(lock.Artifacts) == 0 {
+		return "", errors.New("binary lock requires x86_64 architecture and artifacts")
+	}
+	found := false
+	var version string
+	for _, artifact := range lock.Artifacts {
+		for _, binary := range artifact.Binaries {
+			if binary != name {
+				continue
+			}
+			if found {
+				return "", fmt.Errorf("binary lock has multiple entries for %s", name)
+			}
+			found = true
+			version = strings.TrimPrefix(artifact.Version, "v")
+			if version == "" || strings.ContainsAny(version, " \t\r\n") {
+				return "", fmt.Errorf("binary lock has invalid version for %s", name)
+			}
+		}
+	}
+	if !found {
+		return "", fmt.Errorf("binary lock has no entry for %s", name)
+	}
+	return version, nil
+}
+
 func installBinaries(lockPath, destination string, verifyOnly bool, output io.Writer) error {
 	var lock binaryLock
 	if err := readLock(lockPath, &lock); err != nil {

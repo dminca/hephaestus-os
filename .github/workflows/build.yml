@@ -49,7 +49,8 @@ jobs:
           export PATH="/usr/libexec/hephaestus/bin:$PATH"
           go run ./files/system/usr/share/hephaestus/build-assets sources --lock "$HEPHAESTUS_ASSETS/sources.lock.json" --destination "$HEPHAESTUS_ASSETS/nvim/plugins"
           go run ./files/system/usr/share/hephaestus/build-assets binaries --lock "$HEPHAESTUS_ASSETS/binaries.lock.json"
-          test "$(tree-sitter --version | cut -d ' ' -f 2)" = "0.26.1"
+          expected_tree_sitter_version=$(go run ./files/system/usr/share/hephaestus/build-assets binary-version --lock "$HEPHAESTUS_ASSETS/binaries.lock.json" tree-sitter)
+          test "$(tree-sitter --version | cut -d ' ' -f 2)" = "$expected_tree_sitter_version"
           nvim --headless -u NONE -l "$HEPHAESTUS_ASSETS/build-parsers.lua"
 
   bluebuild:

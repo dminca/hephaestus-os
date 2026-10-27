@@ -1,11 +1,77 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/dminca/hephaestus-os/internal/lockfile"
 )
+
+func checkCatalogLock(lock binaryLock) error {
+	if lock.Architecture != "x86_64" || len(lock.Artifacts) != len(artifacts) {
+		return fmt.Errorf("architecture or artifact count differs from the catalog")
+	}
+	for i, spec := range artifacts {
+		pin := lock.Artifacts[i]
+		expectedURL := "https://github.com/" + spec.repository + "/releases/download/" + spec.version + "/" + spec.filename
+		if pin.Repository != spec.repository || pin.Version != spec.version || pin.URL != expectedURL ||
+			pin.License != spec.license || !reflect.DeepEqual(pin.Binaries, spec.binaries) {
+			return fmt.Errorf("artifact %d (%s) differs from the catalog", i, spec.repository)
+		}
+		digest, err := hex.DecodeString(pin.SHA256)
+		if err != nil || len(digest) != sha256.Size {
+			return fmt.Errorf("artifact %s requires a SHA256 checksum", spec.repository)
+		}
+	}
+	return nil
+}
+
+func TestCommittedLockMatchesCatalog(t *testing.T) {
+	root, err := lockfile.RepositoryRoot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	content, err := os.ReadFile(filepath.Join(root, "files/system/usr/share/hephaestus/binaries.lock.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var lock binaryLock
+	if err := json.Unmarshal(content, &lock); err != nil {
+		t.Fatal(err)
+	}
+	if err := checkCatalogLock(lock); err != nil {
+		t.Fatalf("%v; regenerate with go run ./tools/lock-binaries", err)
+	}
+	for name, mutate := range map[string]func(*binaryLock){
+		"architecture": func(lock *binaryLock) { lock.Architecture = "other" },
+		"count":        func(lock *binaryLock) { lock.Artifacts = lock.Artifacts[:len(lock.Artifacts)-1] },
+		"repository":   func(lock *binaryLock) { lock.Artifacts[0].Repository = "other/tool" },
+		"version":      func(lock *binaryLock) { lock.Artifacts[0].Version += "-stale" },
+		"url":          func(lock *binaryLock) { lock.Artifacts[0].URL += "-stale" },
+		"binaries":     func(lock *binaryLock) { lock.Artifacts[0].Binaries = []string{"other"} },
+		"license":      func(lock *binaryLock) { lock.Artifacts[0].License = "other" },
+		"checksum":     func(lock *binaryLock) { lock.Artifacts[0].SHA256 = "invalid" },
+		"order":        func(lock *binaryLock) { lock.Artifacts[0], lock.Artifacts[1] = lock.Artifacts[1], lock.Artifacts[0] },
+	} {
+		t.Run(name, func(t *testing.T) {
+			var changed binaryLock
+			if err := json.Unmarshal(content, &changed); err != nil {
+				t.Fatal(err)
+			}
+			mutate(&changed)
+			if err := checkCatalogLock(changed); err == nil {
+				t.Fatal("accepted inconsistent generated lock")
+			}
+		})
+	}
+}
 
 func TestIncompleteReleaseMetadataPreservesLock(t *testing.T) {
 	for name, response := range map[string]string{
