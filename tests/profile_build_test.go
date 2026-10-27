@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"encoding/json"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -33,43 +32,6 @@ func TestNoRepositoryPythonScripts(t *testing.T) {
 
 func TestProfileBuildUsesLockedTreeSitter(t *testing.T) {
 	root := repository(t)
-	var lock struct {
-		Artifacts []struct {
-			Repository string   `json:"repository"`
-			Version    string   `json:"version"`
-			URL        string   `json:"url"`
-			SHA256     string   `json:"sha256"`
-			Binaries   []string `json:"binaries"`
-		} `json:"artifacts"`
-	}
-	path := filepath.Join(root, "files/system/usr/share/hephaestus/binaries.lock.json")
-	if err := json.Unmarshal([]byte(readFile(t, path)), &lock); err != nil {
-		t.Fatal(err)
-	}
-	found := false
-	for _, artifact := range lock.Artifacts {
-		if artifact.Repository != "tree-sitter/tree-sitter" {
-			continue
-		}
-		found = true
-		if artifact.Version != "v0.26.1" {
-			t.Fatalf("unexpected Tree-sitter version: %s", artifact.Version)
-		}
-		const url = "https://github.com/tree-sitter/tree-sitter/releases/download/v0.26.1/tree-sitter-linux-x64.gz"
-		if artifact.URL != url {
-			t.Fatalf("unexpected Tree-sitter release asset: %s", artifact.URL)
-		}
-		const checksum = "d74182fffbf441f247371ad6af77d99b10ac9f788d7e068e4b44992d9d6d7c26"
-		if artifact.SHA256 != checksum {
-			t.Fatal("Tree-sitter checksum differs from the reviewed upstream asset")
-		}
-		if len(artifact.Binaries) != 1 || artifact.Binaries[0] != "tree-sitter" {
-			t.Fatalf("unexpected executable names: %v", artifact.Binaries)
-		}
-	}
-	if !found {
-		t.Fatal("Tree-sitter is missing from the binary lock")
-	}
 	script := readFile(t, filepath.Join(root, "files/scripts/install-profile.sh"))
 	if strings.Contains(script, "cargo install --locked tree-sitter-cli") {
 		t.Fatal("build still depends on the unavailable crates.io release")
@@ -94,37 +56,39 @@ func TestProfileBuildUsesLockedTreeSitter(t *testing.T) {
 	if !strings.Contains(script, `export PATH="/usr/libexec/hephaestus/bin:$PATH"`) {
 		t.Fatal("image build must prefer pinned executables over distribution packages")
 	}
-	if !strings.Contains(script, `test "$(tree-sitter --version | cut -d ' ' -f 2)" = "0.26.1"`) {
-		t.Fatal("parser build must check the required Tree-sitter version")
+	for name, content := range map[string]string{
+		"image build": script,
+		"parser CI":   readFile(t, filepath.Join(root, ".github/workflows/build.yml")),
+	} {
+		t.Run(name, func(t *testing.T) {
+			lookup := strings.Index(content, "expected_tree_sitter_version=$(")
+			check := strings.Index(content, `test "$(tree-sitter --version | cut -d ' ' -f 2)" = "$expected_tree_sitter_version"`)
+			parser := strings.Index(content, "nvim --headless -u NONE -l")
+			if lookup < 0 || check <= lookup || parser <= check {
+				t.Fatal("lock-derived Tree-sitter version must be checked before parser compilation")
+			}
+			line := strings.SplitN(content[lookup:], "\n", 2)[0]
+			if !strings.Contains(line, "binary-version") || !strings.Contains(line, "tree-sitter") {
+				t.Fatal("expected Tree-sitter version must come from the asset helper")
+			}
+			if name == "parser CI" && !strings.Contains(line, `--lock "$HEPHAESTUS_ASSETS/binaries.lock.json"`) {
+				t.Fatal("parser CI must read the repository binary lock")
+			}
+		})
 	}
 }
 
 func TestProfileBuildInstallsHunk(t *testing.T) {
 	root := repository(t)
-	var lock struct {
-		Artifacts []struct {
-			Repository string   `json:"repository"`
-			Version    string   `json:"version"`
-			URL        string   `json:"url"`
-			SHA256     string   `json:"sha256"`
-			Binaries   []string `json:"binaries"`
-		} `json:"artifacts"`
-	}
-	if err := json.Unmarshal([]byte(readFile(t, filepath.Join(root,
-		"files/system/usr/share/hephaestus/binaries.lock.json"))), &lock); err != nil {
-		t.Fatal(err)
-	}
+	lock := committedBinaryLock(t)
 	found := false
 	for _, artifact := range lock.Artifacts {
 		if artifact.Repository != "modem-dev/hunk" {
 			continue
 		}
 		found = true
-		if artifact.Version != "v0.24.1" ||
-			artifact.URL != "https://github.com/modem-dev/hunk/releases/download/v0.24.1/hunkdiff-linux-x64.tar.gz" ||
-			artifact.SHA256 != "4b8c98f8d97745499916cc1e1d2f27ffd258c6d6358dd4532f61e41c5eb19692" ||
-			len(artifact.Binaries) != 1 || artifact.Binaries[0] != "hunk" {
-			t.Fatal("Hunk differs from the reviewed Linux release")
+		if len(artifact.Binaries) != 1 || artifact.Binaries[0] != "hunk" {
+			t.Fatal("Hunk release must provide the hunk executable")
 		}
 	}
 	if !found {

@@ -58,6 +58,27 @@ After its initial Flatpak installation completes, log out and back in to start i
 or open Nextcloud manually. Account setup and sync folders remain per-user.
 An existing user autostart override can disable the system autostart entry.
 
+## Updating pinned binaries
+
+The `artifacts` catalog in `tools/lock-binaries/main.go` is the master list of
+binary versions, release asset filenames, executable names, and licenses.
+To upgrade a binary, edit its catalog entry, then regenerate the download URLs
+and verified SHA256 checksums:
+
+```bash
+go run ./tools/lock-binaries
+```
+
+This requires authenticated `gh` access and `curl`. Review and commit both the
+catalog change and the generated
+`files/system/usr/share/hephaestus/binaries.lock.json`; do not edit the lock
+independently. An offline test detects a lock that no longer matches the catalog.
+Tests and builds consume the generated metadata without separate release constants.
+Builds verify downloads against the locked checksums, and both image and parser
+CI builds check the installed Tree-sitter version against the lock before
+compiling parsers. Parser CI also builds and loads the configured parsers to
+check compatibility; matching a version or checksum alone does not establish it.
+
 ## ISO
 
 If build on Fedora Atomic, you can generate an offline ISO with the instructions available [here](https://blue-build.org/how-to/generate-iso/#_top). These ISOs cannot unfortunately be distributed on GitHub for free due to large sizes, so for public projects something else has to be used for hosting.

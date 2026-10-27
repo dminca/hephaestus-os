@@ -161,6 +161,45 @@ func TestBinaryVerificationCommand(t *testing.T) {
 	}
 }
 
+func TestBinaryVersionCommand(t *testing.T) {
+	for _, version := range []string{"v9.8.7", "10.2.3"} {
+		t.Run(version, func(t *testing.T) {
+			lock := binaryLock{Architecture: "x86_64", Artifacts: []binaryArtifact{{
+				Version: version, Binaries: []string{"tool", "alias"},
+			}}}
+			for _, name := range []string{"tool", "alias"} {
+				var output bytes.Buffer
+				err := run([]string{"binary-version", "--lock", writeLockFixture(t, lock), name}, &output)
+				if err != nil || output.String() != strings.TrimPrefix(version, "v")+"\n" {
+					t.Fatalf("unexpected version output %q: %v", output.String(), err)
+				}
+			}
+		})
+	}
+	for name, lock := range map[string]binaryLock{
+		"missing":       {Architecture: "x86_64", Artifacts: []binaryArtifact{{Version: "v1", Binaries: []string{"other"}}}},
+		"empty version": {Architecture: "x86_64", Artifacts: []binaryArtifact{{Binaries: []string{"tool"}}}},
+		"prefix only":   {Architecture: "x86_64", Artifacts: []binaryArtifact{{Version: "v", Binaries: []string{"tool"}}}},
+		"whitespace":    {Architecture: "x86_64", Artifacts: []binaryArtifact{{Version: "v1\n", Binaries: []string{"tool"}}}},
+		"duplicate": {Architecture: "x86_64", Artifacts: []binaryArtifact{
+			{Version: "v1", Binaries: []string{"tool"}}, {Version: "v2", Binaries: []string{"tool"}},
+		}},
+		"duplicate alias": {Architecture: "x86_64", Artifacts: []binaryArtifact{{Version: "v1", Binaries: []string{"tool", "tool"}}}},
+		"architecture":    {Architecture: "other", Artifacts: []binaryArtifact{{Version: "v1", Binaries: []string{"tool"}}}},
+		"empty lock":      {},
+	} {
+		t.Run(name, func(t *testing.T) {
+			var output bytes.Buffer
+			if err := run([]string{"binary-version", "--lock", writeLockFixture(t, lock), "tool"}, &output); err == nil {
+				t.Fatal("accepted invalid version lookup")
+			}
+			if output.Len() != 0 {
+				t.Fatalf("failed lookup printed version: %q", output.String())
+			}
+		})
+	}
+}
+
 func TestSourceInstallationCommand(t *testing.T) {
 	data := []byte("plugin content\n")
 	archive := tarArchive(t, []*tar.Header{
@@ -261,7 +300,9 @@ func TestSourceInstallationPreservesExistingSymlink(t *testing.T) {
 }
 
 func TestAssetCommandErrors(t *testing.T) {
-	for _, arguments := range [][]string{nil, {"unknown"}, {"sources", "extra"}, {"binaries", "extra"}} {
+	for _, arguments := range [][]string{nil, {"unknown"}, {"sources", "extra"}, {"binaries", "extra"},
+		{"binary-version"}, {"binary-version", "tool", "extra"}, {"binary-version", "--unknown"},
+		{"binary-version", "--lock", filepath.Join(t.TempDir(), "missing"), "tool"}} {
 		if err := run(arguments, io.Discard); err == nil {
 			t.Fatalf("accepted arguments %v", arguments)
 		}
@@ -271,8 +312,12 @@ func TestAssetCommandErrors(t *testing.T) {
 		if err := os.WriteFile(filename, []byte(content), 0o600); err != nil {
 			t.Fatal(err)
 		}
-		for _, command := range []string{"sources", "binaries"} {
-			if err := run([]string{command, "--lock", filename}, io.Discard); err == nil {
+		for _, command := range []string{"sources", "binaries", "binary-version"} {
+			arguments := []string{command, "--lock", filename}
+			if command == "binary-version" {
+				arguments = append(arguments, "tool")
+			}
+			if err := run(arguments, io.Discard); err == nil {
 				t.Fatalf("accepted invalid %s lock %q", command, content)
 			}
 		}
