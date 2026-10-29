@@ -102,9 +102,9 @@
       "sha256": "63a66b3577dd6b1f611c3a883d39603ce656aafce2d5fdd484ec7dc1128fc18b"
     },
     "echasnovski/mini.ai": {
-      "revision": "d0c4987a1ead2bcf4eb22cc9815c662d76677c08",
-      "url": "https://codeload.github.com/echasnovski/mini.ai/tar.gz/d0c4987a1ead2bcf4eb22cc9815c662d76677c08",
-      "sha256": "62aa12e7b0b4edae0f6916eefb59d1e42357291c2a74f5784ee6b88698a907ea"
+      "revision": "a4f5648dedf435e6306205135d1babb563b55d28",
+      "url": "https://codeload.github.com/echasnovski/mini.ai/tar.gz/a4f5648dedf435e6306205135d1babb563b55d28",
+      "sha256": "8097506cae1dedcd09d85eec330554b3e6c2f9e46f22eb58bbc0df61f242f86b"
     },
     "ellisonleao/glow.nvim": {
       "revision": "5d5954b2f22e109d4a6eba8b2618c5b96e4ee7a2",
@@ -192,9 +192,9 @@
       "sha256": "60e1dba15d13d35abea6d25b7684fe04f3bc55549337d74a3523f9e4947dc9c7"
     },
     "lewis6991/gitsigns.nvim": {
-      "revision": "d4854fa9a94b5c8b37dd209fb4a19e98e764186f",
-      "url": "https://codeload.github.com/lewis6991/gitsigns.nvim/tar.gz/d4854fa9a94b5c8b37dd209fb4a19e98e764186f",
-      "sha256": "17bacf9ca4d3bb7b30ab040eb5bbe9a6102f3567683f3b158f1b7e1c1986f5ee"
+      "revision": "1e9d0fbfe7ff848bc402d2c2e2854fb4eff2dce7",
+      "url": "https://codeload.github.com/lewis6991/gitsigns.nvim/tar.gz/1e9d0fbfe7ff848bc402d2c2e2854fb4eff2dce7",
+      "sha256": "b674a31ad6ec327abc7016f6213b681b672fd2d610a399762bbee8b7feeb96eb"
     },
     "mg979/vim-visual-multi": {
       "revision": "a6975e7c1ee157615bbc80fc25e4392f71c344d4",
@@ -212,9 +212,9 @@
       "sha256": "ddea38d8999233f3a5f1733c95f99ef6b57957d26bbde776906c8937ffdeffe3"
     },
     "mrcjkb/rustaceanvim": {
-      "revision": "f95bb9aa3bbb73fe26ffe3482836545d217ad049",
-      "url": "https://codeload.github.com/mrcjkb/rustaceanvim/tar.gz/f95bb9aa3bbb73fe26ffe3482836545d217ad049",
-      "sha256": "b7d6b4e9374affbbf95c086629f48e875142a75dcc8b2815127441c4096b92b0"
+      "revision": "fc3bbbaf54b4c0e0717dfabf7e30350d4de8cfed",
+      "url": "https://codeload.github.com/mrcjkb/rustaceanvim/tar.gz/fc3bbbaf54b4c0e0717dfabf7e30350d4de8cfed",
+      "sha256": "48713f7e8d71ff45bb722f61a5efea4a4f6f919b8c4a1bcae6132beb223916ad"
     },
     "mrjones2014/smart-splits.nvim": {
       "revision": "dd40c3a03ef71bcdf77fb4b14668cc1320293f48",
@@ -222,9 +222,9 @@
       "sha256": "7ddf6d6b3a342ac041b17bb55785c166b7589bafc98064c91c135970fd05d78b"
     },
     "neovim/nvim-lspconfig": {
-      "revision": "77b7432d4770d23b277d37923e5a08a442d8bb07",
-      "url": "https://codeload.github.com/neovim/nvim-lspconfig/tar.gz/77b7432d4770d23b277d37923e5a08a442d8bb07",
-      "sha256": "caaf1275476782593def2daaa8f29c9991b8dc9d7c05c413580eb6d5d8371053"
+      "revision": "4b2b045b8ceb035f5c8bc9cab19b95706bfa6a19",
+      "url": "https://codeload.github.com/neovim/nvim-lspconfig/tar.gz/4b2b045b8ceb035f5c8bc9cab19b95706bfa6a19",
+      "sha256": "314d21e97fd9def69231589fb1f6c6231243ce4d707421a0e4ce5508eb645848"
     },
     "niksingh710/leetcode.nvim": {
       "revision": "cab77da208b0abca7070ef4213bc4cea1a339ada",

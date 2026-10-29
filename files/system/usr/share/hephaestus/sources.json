@@ -123,7 +123,7 @@
     {
       "repository": "echasnovski/mini.ai",
       "ref": "HEAD",
-      "revision": "d0c4987a1ead2bcf4eb22cc9815c662d76677c08",
+      "revision": "a4f5648dedf435e6306205135d1babb563b55d28",
       "type": "branch"
     },
     {
@@ -231,7 +231,7 @@
     {
       "repository": "lewis6991/gitsigns.nvim",
       "ref": "HEAD",
-      "revision": "d4854fa9a94b5c8b37dd209fb4a19e98e764186f",
+      "revision": "1e9d0fbfe7ff848bc402d2c2e2854fb4eff2dce7",
       "type": "branch"
     },
     {
@@ -255,7 +255,7 @@
     {
       "repository": "mrcjkb/rustaceanvim",
       "ref": "HEAD",
-      "revision": "f95bb9aa3bbb73fe26ffe3482836545d217ad049",
+      "revision": "fc3bbbaf54b4c0e0717dfabf7e30350d4de8cfed",
       "type": "branch"
     },
     {
@@ -267,7 +267,7 @@
     {
       "repository": "neovim/nvim-lspconfig",
       "ref": "HEAD",
-      "revision": "77b7432d4770d23b277d37923e5a08a442d8bb07",
+      "revision": "4b2b045b8ceb035f5c8bc9cab19b95706bfa6a19",
       "type": "branch"
     },
     {
