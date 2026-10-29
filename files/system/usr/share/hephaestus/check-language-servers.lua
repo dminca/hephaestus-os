@@ -1,4 +1,11 @@
-local servers = assert(vim.g.hephaestus_language_server_commands, "Hephaestus LSP configuration did not load")
+local function fail(message)
+  io.stderr:write(message .. "\n")
+  vim.cmd("cquit 1")
+end
+local servers = vim.g.hephaestus_language_server_commands
+if not servers then
+  fail("Hephaestus LSP configuration did not load")
+end
 local failures = {}
 local count = 0
 for name, command in pairs(servers) do
@@ -10,5 +17,7 @@ for name, command in pairs(servers) do
   end
 end
 table.sort(failures)
-assert(#failures == 0, "Language server validation failed:\n" .. table.concat(failures, "\n"))
+if #failures > 0 then
+  fail("Language server validation failed:\n" .. table.concat(failures, "\n"))
+end
 io.stdout:write("All " .. count .. " configured language server commands are installed\n")

@@ -24,7 +24,7 @@ local node_commands = {
   ts_ls = "typescript-language-server", tailwindcss = "tailwindcss-language-server",
   jsonls = "vscode-json-language-server", html = "vscode-html-language-server",
   eslint = "vscode-eslint-language-server", cssls = "vscode-css-language-server",
-  biome = "biome", yamlls = "yaml-language-server",
+  biome = "biome", yamlls = "yaml-language-server", svelte = "svelteserver",
 }
 local required_commands = {}
 for name, config in pairs(servers) do
