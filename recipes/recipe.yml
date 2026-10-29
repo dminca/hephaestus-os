@@ -39,6 +39,7 @@ modules:
         - direnv
         - tmux
         - neovim
+        - nix-core
         - git-lfs
         - git-delta
         - gh
