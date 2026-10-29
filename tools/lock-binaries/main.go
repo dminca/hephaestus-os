@@ -56,7 +56,7 @@ var artifacts = []artifactSpec{
 		bundle: "haskell-language-server", stripRoot: true,
 	},
 	{
-		repository: "tree-sitter/tree-sitter", version: "v0.26.1",
+		repository: "tree-sitter/tree-sitter", version: "v0.27.1",
 		filename: "tree-sitter-linux-x64.gz",
 		binaries: []string{"tree-sitter"}, license: "MIT",
 	},
