@@ -50,6 +50,9 @@ jobs:
       - name: Install Renovate
         run: npm install --global renovate@44.192.2
 
+      - name: Check Renovate subprocess authentication
+        run: node --test tests/renovate-config.test.cjs
+
       - name: Run Renovate
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
