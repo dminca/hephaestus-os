@@ -7,7 +7,7 @@
     "node": ">=22"
   },
   "dependencies": {
-    "@biomejs/biome": "2.6.3",
+    "@biomejs/biome": "2.6.4",
     "@mermaid-js/mermaid-cli": "12.0.0",
     "@tailwindcss/language-server": "0.16.0",
     "bash-language-server": "5.8.1",
