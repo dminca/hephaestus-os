@@ -45,6 +45,10 @@ modules:
         - gcc
         - gcc-c++
         - make
+        - xz
+        - gmp
+        - ncurses-compat-libs
+        - zlib-ng-compat
         - cargo
         - rust
         - nodejs24

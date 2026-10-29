@@ -3,7 +3,7 @@ local servers = {
     gofumpt = true, usePlaceholders = true, completeUnimported = true,
     semanticTokens = true, staticcheck = true,
   } } },
-  cue = {}, hls = {}, nil_ls = {}, statix = {}, tofu_ls = {}, ruff = {},
+  cue = {}, hls = {}, nil_ls = {}, tofu_ls = {}, ruff = {},
   lua_ls = { settings = { Lua = { diagnostics = {
     disable = { "miss-name" }, globals = { "vim", "cmp", "Snacks" },
   } } } },
@@ -19,16 +19,28 @@ local servers = {
   } } },
 }
 local missing = {}
+-- These upstream cmd functions prefer project-local tools, then fall back to PATH.
+local node_commands = {
+  ts_ls = "typescript-language-server", tailwindcss = "tailwindcss-language-server",
+  jsonls = "vscode-json-language-server", html = "vscode-html-language-server",
+  eslint = "vscode-eslint-language-server", cssls = "vscode-css-language-server",
+  biome = "biome", yamlls = "yaml-language-server",
+}
+local required_commands = {}
 for name, config in pairs(servers) do
   config.capabilities = require("blink.cmp").get_lsp_capabilities()
   vim.lsp.config(name, config)
   local command = vim.lsp.config[name].cmd
-  if type(command) == "table" and vim.fn.executable(command[1]) == 0 then
-    table.insert(missing, name .. " (" .. command[1] .. ")")
+  local executable = type(command) == "table" and command[1] or node_commands[name]
+  assert(type(executable) == "string", "Cannot resolve language server command: " .. name)
+  required_commands[name] = executable
+  if vim.fn.executable(executable) == 0 then
+    table.insert(missing, name .. " (" .. executable .. ")")
   else
     vim.lsp.enable(name)
   end
 end
+vim.g.hephaestus_language_server_commands = required_commands
 if #missing > 0 then
   table.sort(missing)
   vim.schedule(function()

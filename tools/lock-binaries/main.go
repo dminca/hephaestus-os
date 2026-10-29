@@ -15,9 +15,43 @@ type artifactSpec struct {
 	filename   string
 	binaries   []string
 	license    string
+	bundle     string
+	stripRoot  bool
 }
 
 var artifacts = []artifactSpec{
+	{
+		repository: "cue-lang/cue", version: "v0.17.1",
+		filename: "cue_v0.17.1_linux_amd64.tar.gz",
+		binaries: []string{"cue"}, license: "Apache-2.0",
+	},
+	{
+		repository: "artempyanykh/marksman", version: "2026-02-08",
+		filename: "marksman-linux-x64",
+		binaries: []string{"marksman"}, license: "MIT",
+	},
+	{
+		repository: "Feel-ix-343/markdown-oxide", version: "v0.25.12",
+		filename: "markdown-oxide-v0.25.12-x86_64-unknown-linux-gnu",
+		binaries: []string{"markdown-oxide"}, license: "Apache-2.0",
+	},
+	{
+		repository: "opentofu/tofu-ls", version: "v0.5.3",
+		filename: "tofu-ls_Linux_x86_64.tar.gz",
+		binaries: []string{"tofu-ls"}, license: "MPL-2.0",
+	},
+	{
+		repository: "LuaLS/lua-language-server", version: "3.19.2",
+		filename: "lua-language-server-3.19.2-linux-x64.tar.gz",
+		binaries: []string{"lua-language-server"}, license: "MIT",
+		bundle: "lua-language-server",
+	},
+	{
+		repository: "haskell/haskell-language-server", version: "2.15.0.0",
+		filename: "haskell-language-server-2.15.0.0-x86_64-linux-fedora40.tar.xz",
+		binaries: []string{"haskell-language-server-wrapper"}, license: "Apache-2.0",
+		bundle: "haskell-language-server", stripRoot: true,
+	},
 	{
 		repository: "tree-sitter/tree-sitter", version: "v0.26.1",
 		filename: "tree-sitter-linux-x64.gz",
@@ -87,6 +121,8 @@ type binaryPin struct {
 	SHA256     string   `json:"sha256"`
 	Binaries   []string `json:"binaries"`
 	License    string   `json:"license"`
+	Bundle     string   `json:"bundle,omitempty"`
+	StripRoot  bool     `json:"strip_root,omitempty"`
 }
 
 type binaryLock struct {
@@ -137,6 +173,7 @@ func updateLock() error {
 			pins = append(pins, binaryPin{
 				Repository: spec.repository, Version: spec.version, URL: asset.URL,
 				SHA256: checksum, Binaries: spec.binaries, License: spec.license,
+				Bundle: spec.bundle, StripRoot: spec.stripRoot,
 			})
 			fmt.Printf("Locked %s: %s\n", spec.filename, checksum)
 			found = true

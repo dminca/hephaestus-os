@@ -22,6 +22,8 @@ type binaryArtifact struct {
 	URL        string   `json:"url"`
 	SHA256     string   `json:"sha256"`
 	Binaries   []string `json:"binaries"`
+	Bundle     string   `json:"bundle,omitempty"`
+	StripRoot  bool     `json:"strip_root,omitempty"`
 }
 
 type binaryLock struct {
@@ -88,6 +90,13 @@ func installBinaries(lockPath, destination string, verifyOnly bool, output io.Wr
 		archive := filepath.Join(temporary, "download")
 		if err := downloadVerified(artifact.URL, artifact.SHA256, archive); err != nil {
 			return err
+		}
+		if artifact.Bundle != "" {
+			if err := installBundle(archive, artifact, destination, verifyOnly); err != nil {
+				return fmt.Errorf("install %s bundle: %w", artifact.Repository, err)
+			}
+			fmt.Fprintf(output, "Verified %s bundle (%s)\n", artifact.Repository, artifact.Version)
+			continue
 		}
 		data, err := os.ReadFile(archive)
 		if err != nil {

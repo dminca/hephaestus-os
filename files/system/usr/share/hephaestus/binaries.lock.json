@@ -2,6 +2,69 @@
   "architecture": "x86_64",
   "artifacts": [
     {
+      "repository": "cue-lang/cue",
+      "version": "v0.17.1",
+      "url": "https://github.com/cue-lang/cue/releases/download/v0.17.1/cue_v0.17.1_linux_amd64.tar.gz",
+      "sha256": "a39b0c97695069d95d276d99be0f5dbabb081d801bfdc9ba49b76efaf94e2369",
+      "binaries": [
+        "cue"
+      ],
+      "license": "Apache-2.0"
+    },
+    {
+      "repository": "artempyanykh/marksman",
+      "version": "2026-02-08",
+      "url": "https://github.com/artempyanykh/marksman/releases/download/2026-02-08/marksman-linux-x64",
+      "sha256": "be5098e8213219269c47fc0d916a66fa31ce0602ec967475c722260aabf26087",
+      "binaries": [
+        "marksman"
+      ],
+      "license": "MIT"
+    },
+    {
+      "repository": "Feel-ix-343/markdown-oxide",
+      "version": "v0.25.12",
+      "url": "https://github.com/Feel-ix-343/markdown-oxide/releases/download/v0.25.12/markdown-oxide-v0.25.12-x86_64-unknown-linux-gnu",
+      "sha256": "7d85204680efd2e5a2bb2d4bb139a71ac4c4df89ad87c4eb3d87783d1bc4f54e",
+      "binaries": [
+        "markdown-oxide"
+      ],
+      "license": "Apache-2.0"
+    },
+    {
+      "repository": "opentofu/tofu-ls",
+      "version": "v0.5.3",
+      "url": "https://github.com/opentofu/tofu-ls/releases/download/v0.5.3/tofu-ls_Linux_x86_64.tar.gz",
+      "sha256": "ccf8d85881f493483c9c20ac010d320bf455fdc9dcc39ba0af515206cb488460",
+      "binaries": [
+        "tofu-ls"
+      ],
+      "license": "MPL-2.0"
+    },
+    {
+      "repository": "LuaLS/lua-language-server",
+      "version": "3.19.2",
+      "url": "https://github.com/LuaLS/lua-language-server/releases/download/3.19.2/lua-language-server-3.19.2-linux-x64.tar.gz",
+      "sha256": "93ad326b10f6c00911dd8c450fa098332dbd8f9f45d1052f5636a2d54479b947",
+      "binaries": [
+        "lua-language-server"
+      ],
+      "license": "MIT",
+      "bundle": "lua-language-server"
+    },
+    {
+      "repository": "haskell/haskell-language-server",
+      "version": "2.15.0.0",
+      "url": "https://github.com/haskell/haskell-language-server/releases/download/2.15.0.0/haskell-language-server-2.15.0.0-x86_64-linux-fedora40.tar.xz",
+      "sha256": "7d23b2354a384262c61ef12341af009f01970f932eee9c4b8500b545c89fb160",
+      "binaries": [
+        "haskell-language-server-wrapper"
+      ],
+      "license": "Apache-2.0",
+      "bundle": "haskell-language-server",
+      "strip_root": true
+    },
+    {
       "repository": "tree-sitter/tree-sitter",
       "version": "v0.26.1",
       "url": "https://github.com/tree-sitter/tree-sitter/releases/download/v0.26.1/tree-sitter-linux-x64.gz",

@@ -26,6 +26,26 @@ install -m755 "$temporary/hephaestus-profile" /usr/bin/hephaestus-profile
 )
 "$temporary/hephaestus-assets" sources
 "$temporary/hephaestus-assets" binaries
+ln -s /usr/libexec/hephaestus/lua-language-server/bin/lua-language-server \
+  /usr/libexec/hephaestus/bin/lua-language-server
+make -C /usr/libexec/hephaestus/haskell-language-server install \
+  PREFIX=/usr/libexec/hephaestus/hls \
+  BINDIR=/usr/libexec/hephaestus/bin
+rm -r -- /usr/libexec/hephaestus/haskell-language-server
+
+cargo install --locked --git https://github.com/oxalica/nil \
+  --rev dbbb5c24f9215476992aa1bd305f8e5398e89654 --root /usr/libexec/hephaestus nil
+cargo install --locked --git https://github.com/nerdypepper/statix \
+  --rev d324490e45bcda1b664f28b6f88da8580deda76b --root /usr/libexec/hephaestus statix
+
+cue version
+marksman --version
+markdown-oxide --version
+tofu-ls version
+lua-language-server --version
+haskell-language-server-wrapper --version
+nil --version
+statix --version
 witr --version
 hunk --version
 
@@ -63,3 +83,4 @@ BAT_CACHE_PATH="$assets/bat" bat cache --build --source "$assets/profile/config/
 zsh -n "$assets/profile/zshrc"
 HEPHAESTUS_REPO=/tmp/bluebuild nvim --headless -u "$assets/profile/config/nvim/init.lua" \
   '+lua assert(vim.g.mapleader == " " and vim.o.shiftwidth == 2)' '+qa!'
+nvim --headless -u "$assets/profile/config/nvim/init.lua" -l "$assets/check-language-servers.lua"

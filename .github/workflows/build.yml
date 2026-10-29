@@ -37,10 +37,10 @@ jobs:
       contents: read
     steps:
       - name: Install native parser build dependencies
-        run: dnf install -y git golang neovim gcc gcc-c++ nodejs24 curl-minimal tar gzip unzip
+        run: dnf install -y git golang neovim gcc gcc-c++ nodejs24 curl-minimal tar gzip unzip xz
       - uses: actions/checkout@v7
-      - name: Check parser failure handling
-        run: go test -count=1 ./tests -run TestParserBuildReportsCompleteFailures -v
+      - name: Check Neovim build validation
+        run: go test -count=1 ./tests -run 'TestParserBuildReportsCompleteFailures|TestLanguageServerBuildValidation' -v
       - name: Fetch pinned tools and compile all configured parsers
         shell: bash
         run: |
