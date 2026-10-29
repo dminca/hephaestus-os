@@ -44,9 +44,9 @@ case "$command" in
     ;;
   rpm)
     if [[ "$1" == -qp ]]; then
-      printf 'flow-beta:%s:1:x86_64\n' "$FLOW_RPM_VERSION"
+      printf '%s\n' "${FLOW_PACKAGE_METADATA:-flow-beta:$FLOW_RPM_VERSION:1:x86_64}"
     else
-      printf '%s:1:x86_64\n' "$FLOW_RPM_VERSION"
+      printf '%s\n' "${FLOW_INSTALLED_METADATA:-$FLOW_RPM_VERSION:1:x86_64}"
     fi
     ;;
   minisign)
@@ -109,7 +109,8 @@ func runFlowBuild(t *testing.T, options flowBuildOptions) (output, calls string,
 	command.Env = append(os.Environ(),
 		"PATH="+root+string(os.PathListSeparator)+os.Getenv("PATH"),
 		"CALL_LOG="+log, "FAIL_SIGNATURE=", "FAIL_DNF=", "FAIL_CODEC=",
-		"FLOW_RPM_VERSION="+rpmVersion,
+		"FLOW_RPM_VERSION="+strings.Replace(rpmVersion, "-", "+", 1),
+		"FLOW_PACKAGE_METADATA=", "FLOW_INSTALLED_METADATA=",
 	)
 	command.Env = append(command.Env, options.environment...)
 	output, success = runCommand(t, command)
@@ -132,7 +133,10 @@ func assertCommandNotCalled(t *testing.T, calls, command string) {
 
 func TestFlowDesktop(t *testing.T) {
 	t.Run("UpdatedReleaseInstalled", func(t *testing.T) {
-		output, calls, ok := runFlowBuild(t, flowBuildOptions{version: "0.1.0-beta3"})
+		output, calls, ok := runFlowBuild(t, flowBuildOptions{
+			version:     "0.1.0-beta3",
+			environment: []string{"FLOW_PACKAGE_METADATA=flow-beta:0.1.0+beta3:1:x86_64", "FLOW_INSTALLED_METADATA=0.1.0+beta3:1:x86_64"},
+		})
 		if !ok {
 			t.Fatal(output)
 		}
@@ -141,6 +145,30 @@ func TestFlowDesktop(t *testing.T) {
 		if !strings.Contains(calls, "Flow_0.1.0-beta3_linux_x86_64.rpm") {
 			t.Fatalf("expected updated release package:\n%s", calls)
 		}
+	})
+
+	t.Run("UnexpectedPackageIdentityPreventsInstallation", func(t *testing.T) {
+		output, calls, ok := runFlowBuild(t, flowBuildOptions{
+			environment: []string{"FLOW_PACKAGE_METADATA=wrong-package:9.9.9:1:aarch64"},
+		})
+		if ok || !strings.Contains(output, "Unexpected Flow RPM identity: expected") ||
+			!strings.Contains(output, "got wrong-package:9.9.9:1:aarch64") {
+			t.Fatalf("expected explicit package identity failure:\n%s", output)
+		}
+		assertCommandCalled(t, calls, "minisign")
+		assertCommandNotCalled(t, calls, "dnf5")
+	})
+
+	t.Run("UnexpectedInstalledIdentityStopsBuild", func(t *testing.T) {
+		output, calls, ok := runFlowBuild(t, flowBuildOptions{
+			environment: []string{"FLOW_INSTALLED_METADATA=9.9.9:1:x86_64"},
+		})
+		if ok || !strings.Contains(output, "Unexpected installed Flow RPM identity: expected") ||
+			!strings.Contains(output, "got 9.9.9:1:x86_64") {
+			t.Fatalf("expected explicit installed identity failure:\n%s", output)
+		}
+		assertCommandCalled(t, calls, "dnf5")
+		assertCommandNotCalled(t, calls, "gst-inspect-1.0")
 	})
 
 	t.Run("VerifiedPackageInstalledWithoutTrustOverrides", func(t *testing.T) {
