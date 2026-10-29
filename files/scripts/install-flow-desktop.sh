@@ -6,9 +6,10 @@ if [[ "$(uname -s)" != Linux || "$(uname -m)" != x86_64 ]]; then
   exit 1
 fi
 
-version=0.1.0-beta2
-filename="Flow_${version}_linux_x86_64.rpm"
-url="https://github.com/Flow-Tube/Flow-Desktop/releases/download/v${version}/${filename}"
+version=v0.1.0-beta2 # renovate: datasource=github-releases depName=Flow-Tube/Flow-Desktop
+rpm_version="${version#v}"
+filename="Flow_${rpm_version}_linux_x86_64.rpm"
+url="https://github.com/Flow-Tube/Flow-Desktop/releases/download/${version}/${filename}"
 checksum=7a2b2ab7add117ac70652bee52b499360ed57bd36fa368cbad036af9f5bcdcee
 # Pinned updater key from the v0.1.0-beta2 release's tauri.conf.json.
 public_key=RWQpaRLd6yhk18G30wcoSsrlLXi8bjGYFcC4gMCiYs/Ms5xKMe3P7qpR
@@ -24,10 +25,10 @@ base64 --decode < "$temporary/signature.base64" > "$temporary/signature"
 minisign -Vm "$temporary/$filename" -x "$temporary/signature" -P "$public_key"
 
 test "$(rpm -qp --qf '%{NAME}:%{VERSION}:%{RELEASE}:%{ARCH}' "$temporary/$filename")" \
-  = "flow-beta:${version}:1:x86_64"
+  = "flow-beta:${rpm_version}:1:x86_64"
 # Dependencies use the inherited repositories and their existing signature policy.
 dnf5 install --assumeyes --setopt=install_weak_deps=False "$temporary/$filename"
-test "$(rpm -q --qf '%{VERSION}:%{RELEASE}:%{ARCH}' flow-beta)" = "${version}:1:x86_64"
+test "$(rpm -q --qf '%{VERSION}:%{RELEASE}:%{ARCH}' flow-beta)" = "${rpm_version}:1:x86_64"
 test -x /usr/bin/flow
 test -f '/usr/share/applications/Flow Beta.desktop'
 

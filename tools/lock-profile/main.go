@@ -15,19 +15,21 @@ import (
 
 const nixConfigRevision = "5ea74ed40e60c520daae0a94cc50e05857abcb63"
 
-var reviewedRefs = map[string]string{
-	"folke/lazy.nvim":                 "stable",
-	"ThePrimeagen/harpoon":            "harpoon2",
-	"saghen/blink.cmp":                "v1.7.0",
-	"niksingh710/leetcode.nvim":       "cab77da208b0abca7070ef4213bc4cea1a339ada",
-	"catppuccin/bat":                  "6810349b28055dce54076712fc05fc68da4b8ec0",
-	"nvim-treesitter/nvim-treesitter": "c6dd314086f7b471bf6c9110092a94ce1c06d220",
-}
-
 type sourcePin struct {
 	Revision string `json:"revision"`
 	URL      string `json:"url"`
 	SHA256   string `json:"sha256"`
+}
+
+type sourceSelection struct {
+	Repository string `json:"repository"`
+	Ref        string `json:"ref"`
+	Revision   string `json:"revision"`
+	Type       string `json:"type"`
+}
+
+type sourceManifest struct {
+	Sources []sourceSelection `json:"sources"`
 }
 
 type sourceLock struct {
@@ -48,6 +50,19 @@ func updateLock() error {
 		return err
 	}
 	assets := filepath.Join(root, "files/system/usr/share/hephaestus")
+	manifestPath := filepath.Join(assets, "sources.json")
+	content, err := os.ReadFile(manifestPath)
+	if err != nil {
+		return err
+	}
+	var manifest sourceManifest
+	if err := json.Unmarshal(content, &manifest); err != nil {
+		return fmt.Errorf("read source manifest: %w", err)
+	}
+	if len(manifest.Sources) == 0 {
+		return errors.New("source manifest is empty")
+	}
+
 	config, err := os.ReadFile(filepath.Join(assets, "profile/config/nvim/lua/hephaestus/plugins.lua"))
 	if err != nil {
 		return err
@@ -58,8 +73,8 @@ func updateLock() error {
 		repositories[match[1]] = true
 	}
 	path := filepath.Join(assets, "sources.lock.json")
-	existing := sourceLock{}
-	content, err := os.ReadFile(path)
+	existing := sourceLock{NixConfigRevision: nixConfigRevision}
+	content, err = os.ReadFile(path)
 	if err == nil {
 		if err := json.Unmarshal(content, &existing); err != nil {
 			return fmt.Errorf("read existing source lock: %w", err)
@@ -71,13 +86,49 @@ func updateLock() error {
 		return err
 	}
 
-	names := make([]string, 0, len(repositories))
-	for repository := range repositories {
+	commitPattern := regexp.MustCompile(`^[0-9a-f]{40}$`)
+	checksumPattern := regexp.MustCompile(`^[0-9a-f]{64}$`)
+	selections := make(map[string]sourceSelection, len(manifest.Sources))
+	for _, selection := range manifest.Sources {
+		if !repositories[selection.Repository] {
+			return fmt.Errorf("source manifest includes unused repository %s", selection.Repository)
+		}
+		if _, exists := selections[selection.Repository]; exists {
+			return fmt.Errorf("source manifest has duplicate repository %s", selection.Repository)
+		}
+		if selection.Ref == "" {
+			return fmt.Errorf("source manifest has empty ref for %s", selection.Repository)
+		}
+		switch selection.Type {
+		case "branch":
+			if !commitPattern.MatchString(selection.Revision) {
+				return fmt.Errorf("invalid branch digest for %s: %q", selection.Repository, selection.Revision)
+			}
+		case "release":
+			if selection.Revision != "" {
+				return fmt.Errorf("release source %s must not pin a separate revision", selection.Repository)
+			}
+		case "held":
+			if !commitPattern.MatchString(selection.Ref) || selection.Ref != selection.Revision {
+				return fmt.Errorf("held source %s must use the same full commit for ref and revision", selection.Repository)
+			}
+		default:
+			return fmt.Errorf("unknown source policy %q for %s", selection.Type, selection.Repository)
+		}
+		selections[selection.Repository] = selection
+	}
+	if len(selections) != len(repositories) {
+		for repository := range repositories {
+			if _, exists := selections[repository]; !exists {
+				return fmt.Errorf("source manifest is missing repository %s", repository)
+			}
+		}
+	}
+	names := make([]string, 0, len(selections))
+	for repository := range selections {
 		names = append(names, repository)
 	}
 	sort.Strings(names)
-	commitPattern := regexp.MustCompile(`^[0-9a-f]{40}$`)
-	checksumPattern := regexp.MustCompile(`^[0-9a-f]{64}$`)
 	for _, repository := range names {
 		pin, exists := existing.Sources[repository]
 		if !exists {
@@ -92,33 +143,35 @@ func updateLock() error {
 	}
 	sources := make(map[string]sourcePin, len(names))
 	for _, repository := range names {
-		ref := reviewedRefs[repository]
+		selection := selections[repository]
+		revision := selection.Revision
+		if selection.Type == "release" {
+			var commit struct {
+				SHA string `json:"sha"`
+			}
+			if err := lockfile.GitHubJSON("repos/"+repository+"/commits/"+selection.Ref, &commit); err != nil {
+				return err
+			}
+			if !commitPattern.MatchString(commit.SHA) {
+				return fmt.Errorf("invalid commit for %s: %q", repository, commit.SHA)
+			}
+			revision = commit.SHA
+		}
+		if selection.Type == "held" {
+			revision = selection.Ref
+		}
 		pin, exists := existing.Sources[repository]
-		reviewedCommitChanged := commitPattern.MatchString(ref) && pin.Revision != ref
-		// Reuse reviewed pins; remove an entry to deliberately update it.
-		if exists && !reviewedCommitChanged {
+		if exists && pin.Revision == revision {
 			sources[repository] = pin
 			continue
 		}
-		if ref == "" {
-			ref = "HEAD"
-		}
-		var commit struct {
-			SHA string `json:"sha"`
-		}
-		if err := lockfile.GitHubJSON("repos/"+repository+"/commits/"+ref, &commit); err != nil {
-			return err
-		}
-		if !commitPattern.MatchString(commit.SHA) {
-			return fmt.Errorf("invalid commit for %s: %q", repository, commit.SHA)
-		}
-		url := "https://codeload.github.com/" + repository + "/tar.gz/" + commit.SHA
+		url := "https://codeload.github.com/" + repository + "/tar.gz/" + revision
 		checksum, err := lockfile.DownloadChecksum(url)
 		if err != nil {
 			return err
 		}
-		sources[repository] = sourcePin{Revision: commit.SHA, URL: url, SHA256: checksum}
-		fmt.Printf("Locked %s at %s\n", repository, commit.SHA)
+		sources[repository] = sourcePin{Revision: revision, URL: url, SHA256: checksum}
+		fmt.Printf("Locked %s at %s\n", repository, revision)
 	}
-	return lockfile.WriteJSON(path, sourceLock{NixConfigRevision: nixConfigRevision, Sources: sources})
+	return lockfile.WriteJSON(path, sourceLock{NixConfigRevision: existing.NixConfigRevision, Sources: sources})
 }

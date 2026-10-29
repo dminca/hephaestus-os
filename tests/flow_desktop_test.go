@@ -182,3 +182,65 @@ func TestFlowDesktop(t *testing.T) {
 		}
 	})
 }
+
+func TestFlowDesktopPinUpdater(t *testing.T) {
+	for _, failSignature := range []bool{false, true} {
+		t.Run(fmt.Sprintf("signature-failure-%t", failSignature), func(t *testing.T) {
+			root := t.TempDir()
+			script := `version=v0.1.0-beta2 # renovate: datasource=github-releases depName=Flow-Tube/Flow-Desktop
+checksum=` + strings.Repeat("a", 64) + `
+public_key=RWQpaRLd6yhk18G30wcoSsrlLXi8bjGYFcC4gMCiYs/Ms5xKMe3P7qpR
+`
+			mkdir(t, filepath.Join(root, "files/scripts"))
+			mkdir(t, filepath.Join(root, "tools"))
+			writeFile(t, filepath.Join(root, "files/scripts/install-flow-desktop.sh"), script, 0o644)
+			updateScript := readFile(t, filepath.Join(repository(t), "tools/update-flow-desktop-pin.sh"))
+			writeFile(t, filepath.Join(root, "tools/update-flow-desktop-pin.sh"), updateScript, 0o644)
+
+			bin := filepath.Join(root, "bin")
+			mkdir(t, bin)
+			writeFile(t, filepath.Join(bin, "curl"), `#!/usr/bin/env bash
+set -euo pipefail
+url=
+output=
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    https://*) url=$1 ;;
+    -o) shift; output=$1 ;;
+  esac
+  shift
+done
+if [[ "$url" == *.sig ]]; then
+  printf 'c2lnbmF0dXJl' > "$output"
+else
+  printf 'fixture RPM' > "$output"
+fi
+`, 0o755)
+			minisign := "#!/usr/bin/env bash\n[[ \"${FAIL_SIGNATURE:-false}\" != true ]]\n"
+			writeFile(t, filepath.Join(bin, "minisign"), minisign, 0o755)
+			command := exec.Command("bash", "tools/update-flow-desktop-pin.sh")
+			command.Dir = root
+			command.Env = append(os.Environ(),
+				"PATH="+bin+string(os.PathListSeparator)+os.Getenv("PATH"),
+				fmt.Sprintf("FAIL_SIGNATURE=%t", failSignature),
+			)
+			output, ok := runCommand(t, command)
+			if failSignature {
+				if ok {
+					t.Fatalf("invalid signature was accepted: %s", output)
+				}
+				if !strings.Contains(readFile(t, filepath.Join(root, "files/scripts/install-flow-desktop.sh")), strings.Repeat("a", 64)) {
+					t.Fatal("signature failure modified the pinned checksum")
+				}
+				return
+			}
+			if !ok {
+				t.Fatal(output)
+			}
+			want := fmt.Sprintf("%x", sha256.Sum256([]byte("fixture RPM")))
+			if !strings.Contains(readFile(t, filepath.Join(root, "files/scripts/install-flow-desktop.sh")), "checksum="+want) {
+				t.Fatal("verified release checksum was not written")
+			}
+		})
+	}
+}

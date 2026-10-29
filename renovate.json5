@@ -1,0 +1,157 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+  "enabledManagers": ["npm", "gomod", "github-actions", "custom.regex"],
+  "schedule": ["before 7am on Monday"],
+  "timezone": "UTC",
+  "dependencyDashboard": true,
+  "automerge": false,
+  "prConcurrentLimit": 4,
+  "prHourlyLimit": 0,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 7am on Monday"],
+    "automerge": false,
+    "groupName": "npm lockfile maintenance"
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Track Git branch commits for locked editor sources",
+      "managerFilePatterns": ["files/system/usr/share/hephaestus/sources.json"],
+      "matchStrings": [
+        "\"repository\":\\s*\"(?<depName>[^\"]+)\",\\s*\"ref\":\\s*\"(?<currentValue>[^\"]+)\",\\s*\"revision\":\\s*\"(?<currentDigest>[a-f0-9]{40})\",\\s*\"type\":\\s*\"branch\""
+      ],
+      "packageNameTemplate": "https://github.com/{{{depName}}}",
+      "datasourceTemplate": "git-refs"
+    },
+    {
+      "customType": "regex",
+      "description": "Track release tags for editor sources",
+      "managerFilePatterns": ["files/system/usr/share/hephaestus/sources.json"],
+      "matchStrings": [
+        "\"repository\":\\s*\"(?<depName>[^\"]+)\",\\s*\"ref\":\\s*\"(?<currentValue>[^\"]+)\",\\s*\"revision\":\\s*\"\",\\s*\"type\":\\s*\"release\""
+      ],
+      "datasourceTemplate": "github-tags",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "description": "Track binary release catalog versions",
+      "managerFilePatterns": ["tools/lock-binaries/main.go"],
+      "matchStrings": [
+        "repository:\\s*\"(?<depName>[^\"]+)\",\\s*version:\\s*\"(?<currentValue>v?[0-9][^\"]*)\""
+      ],
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "description": "Track signed Flow Desktop releases",
+      "managerFilePatterns": ["files/scripts/install-flow-desktop.sh"],
+      "matchStrings": [
+        "version=(?<currentValue>v[0-9][A-Za-z0-9.+-]*)\\s+# renovate: datasource=github-releases depName=Flow-Tube/Flow-Desktop"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "Flow-Tube/Flow-Desktop",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the installed goimports module",
+      "managerFilePatterns": ["files/scripts/install-profile.sh"],
+      "matchStrings": [
+        "go install golang.org/x/tools/cmd/goimports@(?<currentValue>v[0-9][A-Za-z0-9.+-]*)"
+      ],
+      "datasourceTemplate": "go",
+      "depNameTemplate": "golang.org/x/tools",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the installed yamlfix package",
+      "managerFilePatterns": ["files/scripts/install-profile.sh"],
+      "matchStrings": ["yamlfix==(?<currentValue>[0-9][A-Za-z0-9.+-]*)"],
+      "datasourceTemplate": "pypi",
+      "depNameTemplate": "yamlfix",
+      "versioningTemplate": "pep440"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchFileNames": ["files/system/usr/share/hephaestus/sources.json"],
+      "groupName": "Neovim source pins",
+      "postUpgradeTasks": {
+        "commands": ["go run ./tools/lock-profile"],
+        "fileFilters": ["files/system/usr/share/hephaestus/sources.lock.json"],
+        "executionMode": "branch"
+      }
+    },
+    {
+      "matchPackageNames": ["saghen/blink.cmp"],
+      "dependencyDashboardApproval": true,
+      "groupName": "Reviewed Neovim release pins"
+    },
+    {
+      "matchFileNames": ["tools/lock-binaries/main.go"],
+      "groupName": "Pinned binary releases",
+      "postUpgradeTasks": {
+        "commands": ["go run ./tools/lock-binaries"],
+        "fileFilters": ["files/system/usr/share/hephaestus/binaries.lock.json"],
+        "executionMode": "branch"
+      }
+    },
+    {
+      "matchPackageNames": ["artempyanykh/marksman"],
+      "versioning": "regex:^(?<major>\\d{4})-(?<minor>\\d{2})-(?<patch>\\d{2})$"
+    },
+    {
+      "matchPackageNames": ["haskell/haskell-language-server"],
+      "versioning": "loose"
+    },
+    {
+      "matchPackageNames": ["Flow-Tube/Flow-Desktop"],
+      "dependencyDashboardApproval": true,
+      "groupName": "Signed Flow Desktop release",
+      "postUpgradeTasks": {
+        "commands": ["bash tools/update-flow-desktop-pin.sh"],
+        "fileFilters": ["files/scripts/install-flow-desktop.sh"],
+        "executionMode": "branch"
+      }
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true,
+      "groupName": "npm major upgrades"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "groupName": "npm dependencies"
+    },
+    {
+      "matchManagers": ["gomod"],
+      "groupName": "Go dependencies"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "matchDepTypes": ["github-runner"],
+      "enabled": false
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions versions"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "matchDepTypes": ["container"],
+      "dependencyDashboardApproval": true,
+      "groupName": "CI container images"
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
+    }
+  ]
+}

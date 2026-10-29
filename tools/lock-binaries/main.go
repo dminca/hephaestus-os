@@ -1,9 +1,12 @@
 package main
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 
 	"github.com/dminca/hephaestus-os/internal/lockfile"
@@ -22,7 +25,7 @@ type artifactSpec struct {
 var artifacts = []artifactSpec{
 	{
 		repository: "cue-lang/cue", version: "v0.17.1",
-		filename: "cue_v0.17.1_linux_amd64.tar.gz",
+		filename: "cue_{version}_linux_amd64.tar.gz",
 		binaries: []string{"cue"}, license: "Apache-2.0",
 	},
 	{
@@ -32,7 +35,7 @@ var artifacts = []artifactSpec{
 	},
 	{
 		repository: "Feel-ix-343/markdown-oxide", version: "v0.25.12",
-		filename: "markdown-oxide-v0.25.12-x86_64-unknown-linux-gnu",
+		filename: "markdown-oxide-{version}-x86_64-unknown-linux-gnu",
 		binaries: []string{"markdown-oxide"}, license: "Apache-2.0",
 	},
 	{
@@ -42,13 +45,13 @@ var artifacts = []artifactSpec{
 	},
 	{
 		repository: "LuaLS/lua-language-server", version: "3.19.2",
-		filename: "lua-language-server-3.19.2-linux-x64.tar.gz",
+		filename: "lua-language-server-{version}-linux-x64.tar.gz",
 		binaries: []string{"lua-language-server"}, license: "MIT",
 		bundle: "lua-language-server",
 	},
 	{
 		repository: "haskell/haskell-language-server", version: "2.15.0.0",
-		filename: "haskell-language-server-2.15.0.0-x86_64-linux-fedora40.tar.xz",
+		filename: "haskell-language-server-{version}-x86_64-linux-fedora40.tar.xz",
 		binaries: []string{"haskell-language-server-wrapper"}, license: "Apache-2.0",
 		bundle: "haskell-language-server", stripRoot: true,
 	},
@@ -79,7 +82,7 @@ var artifacts = []artifactSpec{
 	},
 	{
 		repository: "tekumara/typos-lsp", version: "v0.1.57",
-		filename: "typos-lsp-v0.1.57-x86_64-unknown-linux-musl.tar.gz",
+		filename: "typos-lsp-{version}-x86_64-unknown-linux-musl.tar.gz",
 		binaries: []string{"typos-lsp"}, license: "MIT",
 	},
 	{
@@ -99,7 +102,7 @@ var artifacts = []artifactSpec{
 	},
 	{
 		repository: "simoarpe/ziggity", version: "v0.54.0",
-		filename: "ziggity-v0.54.0-x86_64-linux-musl.tar.gz",
+		filename: "ziggity-{version}-x86_64-linux-musl.tar.gz",
 		binaries: []string{"ziggity"}, license: "MIT",
 	},
 	{
@@ -142,8 +145,48 @@ func updateLock() error {
 	if err != nil {
 		return err
 	}
+	path := filepath.Join(root, "files/system/usr/share/hephaestus/binaries.lock.json")
+	existing := binaryLock{}
+	hasExisting := true
+	content, err := os.ReadFile(path)
+	if err == nil {
+		if err := json.Unmarshal(content, &existing); err != nil {
+			return fmt.Errorf("read existing binary lock: %w", err)
+		}
+		if existing.Architecture != "x86_64" {
+			return errors.New("existing binary lock has unsupported architecture")
+		}
+	} else if errors.Is(err, os.ErrNotExist) {
+		hasExisting = false
+	} else {
+		return err
+	}
+	previous := make(map[string]binaryPin, len(existing.Artifacts))
+	for _, pin := range existing.Artifacts {
+		if _, exists := previous[pin.Repository]; exists {
+			return fmt.Errorf("existing binary lock has duplicate repository %s", pin.Repository)
+		}
+		previous[pin.Repository] = pin
+	}
+	if hasExisting && len(previous) != len(artifacts) {
+		return fmt.Errorf("existing binary lock has %d artifacts; catalog has %d", len(previous), len(artifacts))
+	}
+
 	pins := make([]binaryPin, 0, len(artifacts))
 	for _, spec := range artifacts {
+		filename := assetFilename(spec)
+		oldPin, exists := previous[spec.repository]
+		if !exists && hasExisting {
+			return fmt.Errorf("existing binary lock is missing %s", spec.repository)
+		}
+		if exists && oldPin.Version == spec.version && oldPin.URL == assetURL(spec, filename) &&
+			reflect.DeepEqual(oldPin.Binaries, spec.binaries) && oldPin.License == spec.license &&
+			oldPin.Bundle == spec.bundle && oldPin.StripRoot == spec.stripRoot &&
+			validSHA256(oldPin.SHA256) {
+			pins = append(pins, oldPin)
+			continue
+		}
+
 		var release struct {
 			Assets []struct {
 				Name   string `json:"name"`
@@ -157,7 +200,7 @@ func updateLock() error {
 		}
 		found := false
 		for _, asset := range release.Assets {
-			if asset.Name != spec.filename {
+			if asset.Name != filename {
 				continue
 			}
 			if !strings.HasPrefix(asset.URL, "https://") {
@@ -180,9 +223,28 @@ func updateLock() error {
 			break
 		}
 		if !found {
-			return fmt.Errorf("release %s is missing asset %s", endpoint, spec.filename)
+			return fmt.Errorf("release %s is missing asset %s", endpoint, filename)
 		}
 	}
-	path := filepath.Join(root, "files/system/usr/share/hephaestus/binaries.lock.json")
 	return lockfile.WriteJSON(path, binaryLock{Architecture: "x86_64", Artifacts: pins})
+}
+
+func assetFilename(spec artifactSpec) string {
+	return strings.ReplaceAll(spec.filename, "{version}", spec.version)
+}
+
+func assetURL(spec artifactSpec, filename string) string {
+	return "https://github.com/" + spec.repository + "/releases/download/" + spec.version + "/" + filename
+}
+
+func validSHA256(value string) bool {
+	if len(value) != 64 {
+		return false
+	}
+	for _, character := range value {
+		if !strings.ContainsRune("0123456789abcdef", character) {
+			return false
+		}
+	}
+	return true
 }
