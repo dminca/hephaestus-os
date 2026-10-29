@@ -66,9 +66,9 @@
     },
     {
       "repository": "tree-sitter/tree-sitter",
-      "version": "v0.26.1",
-      "url": "https://github.com/tree-sitter/tree-sitter/releases/download/v0.26.1/tree-sitter-linux-x64.gz",
-      "sha256": "d74182fffbf441f247371ad6af77d99b10ac9f788d7e068e4b44992d9d6d7c26",
+      "version": "v0.27.1",
+      "url": "https://github.com/tree-sitter/tree-sitter/releases/download/v0.27.1/tree-sitter-linux-x64.gz",
+      "sha256": "d01042f94ba3d6827ddc9788e235f75d8366431be42bdf90ade534d960c98b7d",
       "binaries": [
         "tree-sitter"
       ],
