@@ -72,7 +72,7 @@ expected_tree_sitter_version=$("$temporary/hephaestus-assets" binary-version tre
 test "$(tree-sitter --version | cut -d ' ' -f 2)" = "$expected_tree_sitter_version"
 nvim --headless -u NONE -l "$assets/build-parsers.lua"
 
-GOBIN=/usr/libexec/hephaestus/bin go install golang.org/x/tools/cmd/goimports@v0.31.0
+GOBIN=/usr/libexec/hephaestus/bin go install golang.org/x/tools/cmd/goimports@v0.52.0
 python3 -m venv /usr/libexec/hephaestus/python
 /usr/libexec/hephaestus/python/bin/pip install --disable-pip-version-check 'yamlfix==1.19.1'
 ln -s /usr/libexec/hephaestus/python/bin/yamlfix /usr/libexec/hephaestus/bin/yamlfix
