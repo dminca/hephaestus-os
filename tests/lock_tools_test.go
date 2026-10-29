@@ -253,6 +253,10 @@ func checkLockScenario(t *testing.T, binary, tool string, scenario lockScenario)
 		if !reflect.DeepEqual(actual, expected) {
 			t.Fatalf("generated binary metadata differs from the committed lock:\ngot: %+v\nwant: %+v", actual, expected)
 		}
+		if !strings.Contains(content, `"repository": "pranshuparmar/witr"`) ||
+			!strings.Contains(content, `"version": "v0.3.4"`) {
+			t.Fatal("witr artifact pin is missing")
+		}
 	}
 	if scenario.name == "ReusesExistingPins" && readFile(t, log) != "" {
 		t.Fatal("existing reviewed pins caused network calls")
