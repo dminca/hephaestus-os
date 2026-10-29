@@ -23,8 +23,8 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version-file: go.mod
           cache: false
@@ -40,7 +40,7 @@ jobs:
     steps:
       - name: Install native parser build dependencies
         run: dnf install -y git golang neovim gcc gcc-c++ nodejs24 curl-minimal tar gzip unzip xz
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Check Neovim build validation
         run: go test -count=1 ./tests -run 'TestParserBuildReportsCompleteFailures|TestLanguageServerBuildValidation' -v
       - name: Fetch pinned tools and compile all configured parsers
@@ -72,7 +72,7 @@ jobs:
     steps:
       # the build is fully handled by the reusable github action
       - name: Build Custom Image
-        uses: blue-build/github-action@v1.13
+        uses: blue-build/github-action@c295af864f2802fc6aea227507af43d35823db81 # v1.13
         with:
           recipe: ${{ matrix.recipe }}
           cosign_private_key: ${{ secrets.SIGNING_SECRET }}
