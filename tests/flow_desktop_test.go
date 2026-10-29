@@ -44,9 +44,9 @@ case "$command" in
     ;;
   rpm)
     if [[ "$1" == -qp ]]; then
-      printf 'flow-beta:0.1.0-beta2:1:x86_64\n'
+      printf 'flow-beta:%s:1:x86_64\n' "$FLOW_RPM_VERSION"
     else
-      printf '0.1.0-beta2:1:x86_64\n'
+      printf '%s:1:x86_64\n' "$FLOW_RPM_VERSION"
     fi
     ;;
   minisign)
@@ -67,6 +67,7 @@ esac
 type flowBuildOptions struct {
 	corruptChecksum bool
 	environment     []string
+	version         string
 }
 
 func runFlowBuild(t *testing.T, options flowBuildOptions) (output, calls string, success bool) {
@@ -80,6 +81,16 @@ func runFlowBuild(t *testing.T, options flowBuildOptions) (output, calls string,
 		}
 	}
 	script := readFile(t, filepath.Join(repository(t), "files/scripts/install-flow-desktop.sh"))
+	versionPattern := regexp.MustCompile(`(?m)^version=v([^\s]+)`)
+	versionMatch := versionPattern.FindStringSubmatch(script)
+	if versionMatch == nil {
+		t.Fatal("expected a pinned Flow release version")
+	}
+	rpmVersion := versionMatch[1]
+	if options.version != "" {
+		rpmVersion = options.version
+		script = versionPattern.ReplaceAllLiteralString(script, "version=v"+rpmVersion)
+	}
 	if !options.corruptChecksum {
 		checksum := fmt.Sprintf("checksum=%x", sha256.Sum256([]byte("fixture RPM")))
 		pattern := regexp.MustCompile(`checksum=[a-f0-9]{64}`)
@@ -98,6 +109,7 @@ func runFlowBuild(t *testing.T, options flowBuildOptions) (output, calls string,
 	command.Env = append(os.Environ(),
 		"PATH="+root+string(os.PathListSeparator)+os.Getenv("PATH"),
 		"CALL_LOG="+log, "FAIL_SIGNATURE=", "FAIL_DNF=", "FAIL_CODEC=",
+		"FLOW_RPM_VERSION="+rpmVersion,
 	)
 	command.Env = append(command.Env, options.environment...)
 	output, success = runCommand(t, command)
@@ -119,6 +131,18 @@ func assertCommandNotCalled(t *testing.T, calls, command string) {
 }
 
 func TestFlowDesktop(t *testing.T) {
+	t.Run("UpdatedReleaseInstalled", func(t *testing.T) {
+		output, calls, ok := runFlowBuild(t, flowBuildOptions{version: "0.1.0-beta3"})
+		if !ok {
+			t.Fatal(output)
+		}
+		assertCommandCalled(t, calls, "dnf5")
+		assertCommandCalled(t, calls, "gst-inspect-1.0")
+		if !strings.Contains(calls, "Flow_0.1.0-beta3_linux_x86_64.rpm") {
+			t.Fatalf("expected updated release package:\n%s", calls)
+		}
+	})
+
 	t.Run("VerifiedPackageInstalledWithoutTrustOverrides", func(t *testing.T) {
 		output, calls, ok := runFlowBuild(t, flowBuildOptions{})
 		if !ok {
