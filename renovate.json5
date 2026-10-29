@@ -20,7 +20,7 @@
       "description": "Track Git branch commits for locked editor sources",
       "managerFilePatterns": ["files/system/usr/share/hephaestus/sources.json"],
       "matchStrings": [
-        "\"repository\":\\s*\"(?<depName>[^\"]+)\",\\s*\"ref\":\\s*\"(?<currentValue>[^\"]+)\",\\s*\"revision\":\\s*\"(?<currentDigest>[a-f0-9]{40})\",\\s*\"type\":\\s*\"branch\""
+        "\"repository\":\\s*\"(?<depName>[^\"]+)\",\\s*\"ref\":\\s*\"(?:HEAD|(?<currentValue>[^\"]+))\",\\s*\"revision\":\\s*\"(?<currentDigest>[a-f0-9]{40})\",\\s*\"type\":\\s*\"branch\""
       ],
       "packageNameTemplate": "https://github.com/{{{depName}}}",
       "datasourceTemplate": "git-refs"
