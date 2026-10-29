@@ -20,9 +20,10 @@ func checkCatalogLock(lock binaryLock) error {
 	}
 	for i, spec := range artifacts {
 		pin := lock.Artifacts[i]
-		expectedURL := "https://github.com/" + spec.repository + "/releases/download/" + spec.version + "/" + spec.filename
+		expectedURL := assetURL(spec, assetFilename(spec))
 		if pin.Repository != spec.repository || pin.Version != spec.version || pin.URL != expectedURL ||
-			pin.License != spec.license || !reflect.DeepEqual(pin.Binaries, spec.binaries) {
+			pin.License != spec.license || !reflect.DeepEqual(pin.Binaries, spec.binaries) ||
+			pin.Bundle != spec.bundle || pin.StripRoot != spec.stripRoot {
 			return fmt.Errorf("artifact %d (%s) differs from the catalog", i, spec.repository)
 		}
 		digest, err := hex.DecodeString(pin.SHA256)
@@ -57,6 +58,8 @@ func TestCommittedLockMatchesCatalog(t *testing.T) {
 		"url":          func(lock *binaryLock) { lock.Artifacts[0].URL += "-stale" },
 		"binaries":     func(lock *binaryLock) { lock.Artifacts[0].Binaries = []string{"other"} },
 		"license":      func(lock *binaryLock) { lock.Artifacts[0].License = "other" },
+		"bundle":       func(lock *binaryLock) { lock.Artifacts[0].Bundle = "other" },
+		"strip-root":   func(lock *binaryLock) { lock.Artifacts[0].StripRoot = !lock.Artifacts[0].StripRoot },
 		"checksum":     func(lock *binaryLock) { lock.Artifacts[0].SHA256 = "invalid" },
 		"order":        func(lock *binaryLock) { lock.Artifacts[0], lock.Artifacts[1] = lock.Artifacts[1], lock.Artifacts[0] },
 	} {
@@ -86,9 +89,26 @@ func TestIncompleteReleaseMetadataPreservesLock(t *testing.T) {
 				t.Fatal(err)
 			}
 			path := filepath.Join(assets, "binaries.lock.json")
+			repository, err := lockfile.RepositoryRoot()
+			if err != nil {
+				t.Fatal(err)
+			}
+			content, err := os.ReadFile(filepath.Join(repository, "files/system/usr/share/hephaestus/binaries.lock.json"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			var previous binaryLock
+			if err := json.Unmarshal(content, &previous); err != nil {
+				t.Fatal(err)
+			}
+			previous.Artifacts[0].Version = "v0.0.0"
+			content, err = json.MarshalIndent(previous, "", "  ")
+			if err != nil {
+				t.Fatal(err)
+			}
 			for filename, content := range map[string]string{
 				filepath.Join(root, "go.mod"): "module fixture\n",
-				path:                          "previous reviewed lock\n",
+				path:                          string(content) + "\n",
 			} {
 				if err := os.WriteFile(filename, []byte(content), 0o644); err != nil {
 					t.Fatal(err)
@@ -102,7 +122,7 @@ func TestIncompleteReleaseMetadataPreservesLock(t *testing.T) {
 			t.Chdir(root)
 			t.Setenv("PATH", binDirectory)
 			t.Setenv("GITHUB_RESPONSE", response)
-			err := updateLock()
+			err = updateLock()
 			if err == nil {
 				t.Fatal("incomplete release metadata was accepted")
 			}
@@ -113,7 +133,7 @@ func TestIncompleteReleaseMetadataPreservesLock(t *testing.T) {
 				t.Fatalf("expected missing download URL error, got %v", err)
 			}
 			saved, err := os.ReadFile(path)
-			if err != nil || string(saved) != "previous reviewed lock\n" {
+			if err != nil || string(saved) != string(content)+"\n" {
 				t.Fatalf("previous lock was modified: %q (%v)", saved, err)
 			}
 		})
