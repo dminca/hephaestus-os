@@ -50,6 +50,7 @@ func TestImageChecksLanguageServersAfterInstallation(t *testing.T) {
 	if !strings.Contains(recipe, "        - nix-core\n") {
 		t.Fatal("nil's builtin generation requires the nix-core package")
 	}
+
 	script := readFile(t, filepath.Join(root, "files/scripts/install-profile.sh"))
 	check := strings.Index(script, `-l "$assets/check-language-servers.lua"`)
 	if check < 0 {
@@ -65,5 +66,47 @@ func TestImageChecksLanguageServersAfterInstallation(t *testing.T) {
 		if position < 0 || position >= check {
 			t.Fatalf("missing installation before validation: %s", install)
 		}
+	}
+}
+
+func TestLanguageServerFunctionCommands(t *testing.T) {
+	nvim, err := exec.LookPath("nvim")
+	if err != nil {
+		t.Skip("Neovim is required for LSP configuration tests")
+	}
+	root := repository(t)
+	driver := filepath.Join(t.TempDir(), "driver.lua")
+	writeFile(t, driver, `
+local dynamic = {
+  ts_ls = "typescript-language-server", tailwindcss = "tailwindcss-language-server",
+  jsonls = "vscode-json-language-server", html = "vscode-html-language-server",
+  eslint = "vscode-eslint-language-server", cssls = "vscode-css-language-server",
+  biome = "biome", yamlls = "yaml-language-server", svelte = "svelteserver",
+}
+package.preload["blink.cmp"] = function()
+  return { get_lsp_capabilities = function() return {} end }
+end
+vim.lsp.config = setmetatable({}, {
+  __call = function(self, name, config)
+    config.cmd = dynamic[name] and function() end or { name }
+    rawset(self, name, config)
+  end,
+})
+vim.lsp.enable = function() end
+vim.fn.executable = function() return 1 end
+dofile(vim.env.HEPHAESTUS_LANGUAGES)
+for name, command in pairs(dynamic) do
+  assert(vim.g.hephaestus_language_server_commands[name] == command,
+    "Wrong command for " .. name)
+end
+dofile(vim.env.HEPHAESTUS_LSP_SCRIPT)
+`, 0o600)
+	command := exec.Command(nvim, "--headless", "-u", "NONE", "-l", driver)
+	command.Env = append(os.Environ(),
+		"HEPHAESTUS_LANGUAGES="+filepath.Join(root, "files/system/usr/share/hephaestus/profile/config/nvim/lua/hephaestus/languages.lua"),
+		"HEPHAESTUS_LSP_SCRIPT="+filepath.Join(root, "files/system/usr/share/hephaestus/check-language-servers.lua"),
+	)
+	if output, ok := runCommand(t, command); !ok || !strings.Contains(output, "configured language server commands are installed") {
+		t.Fatalf("function-valued commands must resolve before validation:\n%s", output)
 	}
 }
