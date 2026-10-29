@@ -6,11 +6,11 @@ if [[ "$(uname -s)" != Linux || "$(uname -m)" != x86_64 ]]; then
   exit 1
 fi
 
-version=v0.1.0-beta2 # renovate: datasource=github-releases depName=Flow-Tube/Flow-Desktop
+version=v0.1.0-beta3 # renovate: datasource=github-releases depName=Flow-Tube/Flow-Desktop
 rpm_version="${version#v}"
 filename="Flow_${rpm_version}_linux_x86_64.rpm"
 url="https://github.com/Flow-Tube/Flow-Desktop/releases/download/${version}/${filename}"
-checksum=7a2b2ab7add117ac70652bee52b499360ed57bd36fa368cbad036af9f5bcdcee
+checksum=dbe73c7166db3cc4251a319c6a425e14e4c5ae0dd55b428547fad9708c90a517
 # Pinned updater key from the v0.1.0-beta2 release's tauri.conf.json.
 public_key=RWQpaRLd6yhk18G30wcoSsrlLXi8bjGYFcC4gMCiYs/Ms5xKMe3P7qpR
 temporary=$(mktemp -d)
