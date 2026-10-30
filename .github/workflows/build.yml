@@ -7,8 +7,6 @@ on:
   push:
     branches:
       - main
-    paths-ignore: # don't rebuild if only documentation has changed
-      - "**.md"
 
   pull_request:
   workflow_dispatch: # allow manually triggering builds
@@ -16,10 +14,36 @@ concurrency:
   # only run one build at a time
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
   cancel-in-progress: true
+permissions:
+  contents: read
 jobs:
+  changes:
+    name: Classify CI changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      tests: ${{ steps.changes.outputs.tests }}
+      dependencies: ${{ steps.changes.outputs.dependencies }}
+      node-runtimes: ${{ steps.changes.outputs.node-runtimes }}
+      parsers: ${{ steps.changes.outputs.parsers }}
+      bluebuild: ${{ steps.changes.outputs.bluebuild }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - run: node --test tests/ci-policy.test.cjs tests/container-retention.test.cjs
+      - id: changes
+        run: node .github/scripts/ci-changes.cjs
+
+  # Recent hosted runs: Go ~30s, dependencies <2m, Node <1m, parsers <3m,
+  # images ~12m. Caps leave headroom for cold caches and upstream downloads.
   tests:
     name: Test workstation packaging
+    needs: changes
+    if: needs.changes.outputs.tests == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
@@ -32,7 +56,10 @@ jobs:
 
   dependencies:
     name: Validate locked dependencies
+    needs: changes
+    if: needs.changes.outputs.dependencies == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
     steps:
@@ -40,6 +67,10 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version-file: .github/renovate/package.json
+          cache: npm
+          cache-dependency-path: |
+            .github/renovate/package-lock.json
+            files/system/usr/share/hephaestus/node/package-lock.json
       - name: Install declared npm and locked projects
         env:
           PUPPETEER_SKIP_DOWNLOAD: "true"
@@ -73,7 +104,10 @@ jobs:
 
   node-runtimes:
     name: Check Node ${{ matrix.node }} / npm ${{ matrix.npm }}
+    needs: changes
+    if: needs.changes.outputs.node-runtimes == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     strategy:
@@ -89,6 +123,10 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version-file: .github/renovate/package.json
+          cache: npm
+          cache-dependency-path: |
+            .github/renovate/package-lock.json
+            files/system/usr/share/hephaestus/node/package-lock.json
       - name: Install test dependencies with the supported runtime
         run: |
           package_manager=$(node -p "require('./.github/renovate/package.json').packageManager")
@@ -124,8 +162,13 @@ jobs:
 
   parsers:
     name: Build and load every Treesitter parser
-    needs: [tests, dependencies, node-runtimes]
+    needs: [changes, tests, dependencies, node-runtimes]
+    if: >-
+      always() && !cancelled() && needs.changes.result == 'success' &&
+      needs.changes.outputs.parsers == 'true' &&
+      !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     container: fedora:44
     permissions:
       contents: read
@@ -162,28 +205,71 @@ jobs:
 
   bluebuild:
     name: Build Custom Image
-    needs: [tests, parsers]
+    needs: [changes, tests, dependencies, node-runtimes, parsers]
+    if: >-
+      always() && !cancelled() && needs.changes.result == 'success' &&
+      needs.changes.outputs.bluebuild == 'true' &&
+      !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') &&
+      ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) ||
+       (github.event_name != 'pull_request' && github.ref == 'refs/heads/main'))
     runs-on: ubuntu-latest
+    timeout-minutes: 60
+    concurrency:
+      group: ghcr-hephaestus-os
+      cancel-in-progress: false
     permissions:
       contents: read
       packages: write
       id-token: write
-    strategy:
+    strategy: &image-strategy
       fail-fast: false # stop GH from cancelling all matrix builds if one fails
       matrix:
         recipe:
           # !! Add your recipes here
           - recipe.yml
-    steps:
+    steps: &image-steps
       # the build is fully handled by the reusable github action
       - name: Build Custom Image
         uses: blue-build/github-action@c295af864f2802fc6aea227507af43d35823db81 # v1.13
         with:
           recipe: ${{ matrix.recipe }}
           cli_version: v0.9.37
-          cosign_private_key: ${{ secrets.SIGNING_SECRET }}
-          registry_token: ${{ github.token }}
+          push: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (github.event_name != 'pull_request' && github.ref == 'refs/heads/main') }}
+          cosign_private_key: ${{ ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (github.event_name != 'pull_request' && github.ref == 'refs/heads/main')) && secrets.SIGNING_SECRET || '' }}
+          registry_token: ${{ ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (github.event_name != 'pull_request' && github.ref == 'refs/heads/main')) && github.token || '' }}
           pr_event_number: ${{ github.event.number }}
 
           # enabled by default, disable if your image is small and you want faster builds
           maximize_build_space: true
+
+  image-validation:
+    # Reuse the exact build for forks/manual branches without publisher privileges.
+    name: Build Custom Image (unprivileged)
+    needs: [changes, tests, dependencies, node-runtimes, parsers]
+    if: >-
+      always() && !cancelled() && needs.changes.result == 'success' &&
+      needs.changes.outputs.bluebuild == 'true' &&
+      !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') &&
+      ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) ||
+       (github.event_name != 'pull_request' && github.ref != 'refs/heads/main'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    strategy: *image-strategy
+    steps: *image-steps
+
+  ci:
+    name: CI status
+    needs: [changes, tests, dependencies, node-runtimes, parsers, bluebuild, image-validation]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Require every selected check to succeed
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: node .github/scripts/ci-changes.cjs gate
