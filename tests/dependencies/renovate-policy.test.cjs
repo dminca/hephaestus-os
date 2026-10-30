@@ -65,6 +65,26 @@ test("custom managers extract both Rust revisions and every BlueBuild module dig
   for (const dep of images.deps) assert.match(dep.currentDigest, /^sha256:[a-f0-9]{64}$/);
 });
 
+test("Rust revision updates resolve the default branch without treating HEAD as a named ref", async () => {
+  const { extractPackageFile } = await load("modules/manager/custom/regex/index.js");
+  const { GitRefsDatasource } = await load("modules/datasource/git-refs/index.js");
+  const filename = "files/scripts/install-profile.sh";
+  const manager = config.customManagers.find((entry) => entry.description === "Track locked Rust source revisions");
+  const extracted = extractPackageFile(readFileSync(path.join(root, filename), "utf8"), filename, manager);
+  assert.ok(extracted.deps.length > 0);
+  const digest = "a".repeat(40);
+  const datasource = new GitRefsDatasource();
+  datasource.getRawRefs = async () => [
+    { type: "", value: "HEAD", hash: digest },
+    { type: "heads", value: "main", hash: digest },
+  ];
+  assert.equal(await datasource.getDigest({}, "HEAD"), null);
+  for (const dependency of extracted.deps) {
+    assert.equal(dependency.currentValue, undefined);
+    assert.equal(await datasource.getDigest(dependency, dependency.currentValue), digest);
+  }
+});
+
 test("BlueBuild CLI pins agree and the Nushell image includes a digest", async () => {
   const { extractPackageFile } = await load("modules/manager/custom/regex/index.js");
   const cli = config.customManagers.find((manager) => manager.description === "Track pinned BlueBuild CLI versions");

@@ -70,7 +70,6 @@
         "cargo install --locked --git https://github.com/(?<depName>[^\\s]+)\\s+\\\\\\s+--rev (?<currentDigest>[a-f0-9]{40})"
       ],
       "packageNameTemplate": "https://github.com/{{{depName}}}",
-      "currentValueTemplate": "HEAD",
       "datasourceTemplate": "git-refs"
     },
     {

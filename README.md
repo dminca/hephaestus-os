@@ -166,6 +166,9 @@ Native Renovate managers own npm, Python, and Go metadata. Custom managers cover
 plugin commits, binary releases, Rust revisions, Flow Desktop, and BlueBuild
 pins. Extend the appropriate manager when adding a new dependency surface.
 Never bypass incompatibilities with `--force` or `--legacy-peer-deps`.
+For default-branch Git digest tracking, omit the custom manager's
+`currentValueTemplate`; an explicit `HEAD` is treated as a named branch/tag by
+Renovate's `git-refs` digest lookup and cannot resolve the default branch.
 
 ### Where to put dependency tests
 
