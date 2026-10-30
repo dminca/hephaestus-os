@@ -36,7 +36,7 @@ rm -r -- /usr/libexec/hephaestus/haskell-language-server
 cargo install --locked --git https://github.com/oxalica/nil \
   --rev dbbb5c24f9215476992aa1bd305f8e5398e89654 --root /usr/libexec/hephaestus nil
 cargo install --locked --git https://github.com/nerdypepper/statix \
-  --rev d324490e45bcda1b664f28b6f88da8580deda76b --root /usr/libexec/hephaestus statix
+  --rev a5292554eddc5aebae8b66a0ebe37a4aa5720442 --root /usr/libexec/hephaestus statix
 
 cue version
 marksman --version
