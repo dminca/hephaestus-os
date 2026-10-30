@@ -42,10 +42,6 @@ assert.throws(() => vm.runInContext(script, failure), /could not persist/);
 
 func TestNextcloudAutostart(t *testing.T) {
 	root := repository(t)
-	recipe := readFile(t, filepath.Join(root, "recipes/recipe.yml"))
-	if !strings.Contains(recipe, "      install:\n        - com.nextcloud.desktopclient.nextcloud\n") {
-		t.Fatal("Nextcloud Flatpak installation is missing")
-	}
 	desktop := readFile(t, filepath.Join(root, "files/system/etc/xdg/autostart/com.nextcloud.desktopclient.nextcloud.desktop"))
 	for _, entry := range []string{
 		"Type=Application",

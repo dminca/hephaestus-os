@@ -74,30 +74,26 @@ modules:
         - minisign
         - gstreamer1
         - gstreamer1-plugin-libav
-    remove:
-      packages:
-        - firefox
-        - firefox-langpacks
-
   - type: script
     source: ghcr.io/blue-build/modules/script:latest@sha256:d6076360da9195e2a6d781043a1b049bede3d2389757912a828a957bc78929b8
     scripts:
       - install-flow-desktop.sh
       - install-profile.sh
 
-  - type: default-flatpaks@v1
+  - type: default-flatpaks@v2
     source: ghcr.io/blue-build/modules/default-flatpaks:v2@sha256:9a57a74188d54cd717520a6c434ddfa41346f769b48bbb3bbf418538180f8397
-    notify: true
-    system:
-      repo-name: flathub
-      install:
-        - com.nextcloud.desktopclient.nextcloud
-      remove:
-        - org.mozilla.firefox
-    user:
-      repo-name: flathub
-      remove:
-        - org.mozilla.firefox
+    configurations:
+      - scope: system
+        notify: true
+        repo:
+          name: flathub
+        install:
+          - com.nextcloud.desktopclient.nextcloud
+          - org.signal.Signal
+      - scope: user
+        notify: true
+        repo:
+          name: flathub
 
   - type: signing # this sets up the proper policy & signing files for signed images to work fully
     source: ghcr.io/blue-build/modules/signing:latest@sha256:6227e5ac294e9b60a77836775700df879d8a39b184ca3e511edf73cc58f1f4a6
