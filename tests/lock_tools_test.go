@@ -282,7 +282,13 @@ func checkLockScenario(t *testing.T, binary, tool string, scenario lockScenario)
 		t.Fatal("generated lock is missing the archive checksum")
 	}
 	if tool == "lock-profile" {
-		if !strings.Contains(content, `"nix_config_revision": "5ea74ed40e60c520daae0a94cc50e05857abcb63"`) {
+		var actual struct {
+			NixConfigRevision string `json:"nix_config_revision"`
+		}
+		if err := json.Unmarshal([]byte(content), &actual); err != nil {
+			t.Fatal(err)
+		}
+		if actual.NixConfigRevision != "5ea74ed40e60c520daae0a94cc50e05857abcb63" {
 			t.Fatal("source revision changed")
 		}
 	} else {
@@ -304,8 +310,13 @@ func checkLockScenario(t *testing.T, binary, tool string, scenario lockScenario)
 		if scenario.name == "UpdatesOneArtifact" && strings.Count(readFile(t, log), "\n") != 2 {
 			t.Fatalf("one artifact update should perform one API and one download request, got:\n%s", readFile(t, log))
 		}
-		if !strings.Contains(content, `"repository": "pranshuparmar/witr"`) ||
-			!strings.Contains(content, `"version": "v0.3.4"`) {
+		witrPinned := false
+		for _, artifact := range actual.Artifacts {
+			if artifact.Repository == "pranshuparmar/witr" && artifact.Version == "v0.3.4" {
+				witrPinned = true
+			}
+		}
+		if !witrPinned {
 			t.Fatal("witr artifact pin is missing")
 		}
 	}

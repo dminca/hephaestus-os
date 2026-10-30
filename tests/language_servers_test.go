@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -46,8 +47,8 @@ dofile(vim.env.HEPHAESTUS_LSP_SCRIPT)
 
 func TestImageChecksLanguageServersAfterInstallation(t *testing.T) {
 	root := repository(t)
-	recipe := readFile(t, filepath.Join(root, "recipes/recipe.yml"))
-	if !strings.Contains(recipe, "        - nix-core\n") {
+	dnf := readRecipeModule(t, "dnf")
+	if !slices.Contains(dnf.Install.Packages, "nix-core") {
 		t.Fatal("nil's builtin generation requires the nix-core package")
 	}
 
