@@ -1,0 +1,4 @@
+# renovate: datasource=pypi depName=pip-tools
+pip-tools==7.6.1
+# Click 8.5 changes flag defaults; pip-tools 7.6.1 emits a spurious --no-index.
+click==8.4.2

@@ -49,12 +49,12 @@ statix --version
 witr --version
 hunk --version
 
-npm ci --prefix "$assets/node" --omit=dev --no-audit --no-fund
-for binary in bash-language-server typescript-language-server tsserver tsc \
-  vscode-css-language-server vscode-eslint-language-server vscode-html-language-server \
-  vscode-json-language-server tailwindcss-language-server svelteserver yaml-language-server \
-  emmet-ls biome pyright pyright-langserver fixjson; do
-  test -x "$assets/node/node_modules/.bin/$binary"
+(
+  cd "$assets/node"
+  npm ci --omit=dev --no-audit --no-fund
+)
+node_binaries=$(node "$assets/node/check-tools.cjs" --list)
+for binary in $node_binaries; do
   ln -s "$assets/node/node_modules/.bin/$binary" "/usr/libexec/hephaestus/bin/$binary"
 done
 install -m 0755 "$assets/mmdc" /usr/libexec/hephaestus/bin/mmdc
@@ -72,9 +72,12 @@ expected_tree_sitter_version=$("$temporary/hephaestus-assets" binary-version tre
 test "$(tree-sitter --version | cut -d ' ' -f 2)" = "$expected_tree_sitter_version"
 nvim --headless -u NONE -l "$assets/build-parsers.lua"
 
-GOBIN=/usr/libexec/hephaestus/bin go install golang.org/x/tools/cmd/goimports@v0.52.0
-python3 -m venv /usr/libexec/hephaestus/python
-/usr/libexec/hephaestus/python/bin/pip install --disable-pip-version-check 'yamlfix==1.19.1'
+(
+  cd "$assets/go-tools"
+  GOTOOLCHAIN=local go build -mod=readonly -trimpath \
+    -o /usr/libexec/hephaestus/bin/goimports golang.org/x/tools/cmd/goimports
+)
+bash "$assets/python/install.sh" /usr/libexec/hephaestus/python
 ln -s /usr/libexec/hephaestus/python/bin/yamlfix /usr/libexec/hephaestus/bin/yamlfix
 
 install -Dm644 "$plugins/bat/themes/Catppuccin Mocha.tmTheme" \

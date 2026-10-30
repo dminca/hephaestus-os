@@ -24,11 +24,37 @@ jobs:
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
-          node-version: 26
+          node-version-file: .github/renovate/package.json
+
+      - name: Install declared npm version
+        run: |
+          package_manager=$(node -p "require('./.github/renovate/package.json').packageManager")
+          npm install --global "$package_manager"
+
+      - name: Install locked Renovate
+        working-directory: .github/renovate
+        run: npm ci --no-audit --no-fund
+
+      - name: Validate Renovate configuration and authentication
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: "true"
+        run: |
+          cd files/system/usr/share/hephaestus/node
+          npm ci --no-audit --no-fund
+          cd "$GITHUB_WORKSPACE"
+          .github/renovate/node_modules/.bin/renovate-config-validator --strict renovate.json5
+          node --test tests/renovate-config.test.cjs tests/dependencies/node-runtime.test.cjs tests/dependencies/npm-install.test.cjs tests/dependencies/renovate-policy.test.cjs
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:
-          go-version-file: go.mod
+          go-version-file: files/system/usr/share/hephaestus/go-tools/go.mod
+
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version-file: files/system/usr/share/hephaestus/python/.python-version
+
+      - name: Install Python lock compiler
+        run: pip install -r .github/python-tools.txt
 
       - name: Install minisign for Flow release verification
         run: |
@@ -47,15 +73,9 @@ jobs:
           permission-pull-requests: write
           permission-workflows: write
 
-      - name: Install Renovate
-        run: npm install --global renovate@44.192.2
-
-      - name: Check Renovate subprocess authentication
-        run: node --test tests/renovate-config.test.cjs
-
       - name: Run Renovate
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           RENOVATE_CONFIG_FILE: .github/renovate-global.js
           RENOVATE_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: renovate
+        run: .github/renovate/node_modules/.bin/renovate
