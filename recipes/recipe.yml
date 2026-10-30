@@ -86,7 +86,7 @@ modules:
       - install-profile.sh
 
   - type: default-flatpaks@v1
-    source: ghcr.io/blue-build/modules/default-flatpaks:v1@sha256:ade1b8ec61abe6dd5fc8268583b150a543d72163d2f59ea7d6048e55e1e40ffc
+    source: ghcr.io/blue-build/modules/default-flatpaks:v2@sha256:9a57a74188d54cd717520a6c434ddfa41346f769b48bbb3bbf418538180f8397
     notify: true
     system:
       repo-name: flathub
