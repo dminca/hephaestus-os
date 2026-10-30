@@ -102,6 +102,16 @@ test("Renovate discovers yamlfix through its compiled Python requirements", asyn
   assert.equal(yamlfix.currentValue, "==1.19.1");
 });
 
+test("the Python lock compiler keeps compatible Click flag defaults", async () => {
+  const { applyPackageRules } = await load("util/package-rules/index.js");
+  const result = await applyPackageRules({
+    manager: "pip_requirements", datasource: "pypi", packageName: "click", depName: "click",
+    packageFile: ".github/python-tools.txt", packageRules: config.packageRules,
+  });
+  assert.ok(semver.satisfies("8.4.2", result.allowedVersions));
+  assert.equal(semver.satisfies("8.5.0", result.allowedVersions), false);
+});
+
 test("artifact generation failures set a failing Renovate status", async (t) => {
   const { default: adapters } = await load("modules/platform/api.js");
   const { setPlatformApi } = await load("modules/platform/index.js");

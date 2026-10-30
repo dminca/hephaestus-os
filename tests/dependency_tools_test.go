@@ -10,6 +10,24 @@ import (
 	"testing"
 )
 
+func TestPythonLockRegeneration(t *testing.T) {
+	source := filepath.Join(repository(t), "files/system/usr/share/hephaestus/python")
+	directory := t.TempDir()
+	for _, name := range []string{"requirements.in", "requirements.txt"} {
+		writeFile(t, filepath.Join(directory, name), readFile(t, filepath.Join(source, name)), 0o644)
+	}
+	command := exec.Command("pip-compile", "--generate-hashes", "--allow-unsafe",
+		"--strip-extras", "--no-emit-index-url", "--output-file=requirements.txt", "requirements.in")
+	command.Dir = directory
+	if output, err := command.CombinedOutput(); err != nil {
+		t.Fatalf("regenerate Python lock: %v\n%s", err, output)
+	}
+	if got, want := readFile(t, filepath.Join(directory, "requirements.txt")),
+		readFile(t, filepath.Join(source, "requirements.txt")); got != want {
+		t.Fatal("Python lock regeneration changed committed content, including its command header")
+	}
+}
+
 func TestPythonLockedInstallation(t *testing.T) {
 	directory := filepath.Join(repository(t), "files/system/usr/share/hephaestus/python")
 	destination := filepath.Join(t.TempDir(), "venv")

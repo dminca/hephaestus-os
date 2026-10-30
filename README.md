@@ -139,6 +139,7 @@ For Python, use the Python minor in `python/.python-version` and the lock
 compiler version in `.github/python-tools.txt`:
 
 ```bash
+pip install -r .github/python-tools.txt
 cd files/system/usr/share/hephaestus/python
 pip-compile --generate-hashes --allow-unsafe --strip-extras --no-emit-index-url --output-file=requirements.txt requirements.in
 bash install.sh /tmp/hephaestus-python-check
@@ -147,6 +148,10 @@ bash install.sh /tmp/hephaestus-python-check
 Choose a fresh destination for the check environment. The installer rejects
 another Python minor and installs only hash-pinned requirements. Renovate's
 `pip-compile` manager maintains the source and output together.
+The compiler environment also pins Click 8.4.2: pip-tools 7.6.1 misserializes
+Click 8.5 flag defaults as a spurious `--no-index` in the generated header.
+Renovate holds that compiler-only dependency below 8.5 until pip-tools supports
+the new defaults. This does not constrain Click in the installed yamlfix graph.
 
 For Go tools, use a local compiler satisfying the tool module's `go` directive:
 
@@ -188,7 +193,8 @@ go test -count=1 -tags=integration ./tests -run 'TestPython|TestGoTool|TestRust'
 ```
 
 Install both locked npm projects first. Integration tests require the target
-Python, local Go compiler, and Cargo/rustc; they intentionally fail rather than
+Python, the compiler dependencies in `.github/python-tools.txt`, a local Go
+compiler, and Cargo/rustc; they intentionally fail rather than
 skip when prerequisites are missing. Root Go tests do not traverse the nested
 tool module. CI runs native tool installation separately and checks actual Node
 runtime boundaries before parser/image builds. The Fedora job checks Linux

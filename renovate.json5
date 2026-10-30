@@ -200,6 +200,13 @@
       "groupName": "Python tools"
     },
     {
+      "description": "pip-tools 7.6.1 needs pre-8.5 Click flag defaults for stable lock headers",
+      "matchManagers": ["pip_requirements"],
+      "matchFileNames": [".github/python-tools.txt"],
+      "matchPackageNames": ["click"],
+      "allowedVersions": "<8.5"
+    },
+    {
       "matchPackageNames": ["oxalica/nil", "nerdypepper/statix"],
       "groupName": "Rust source pins"
     },
