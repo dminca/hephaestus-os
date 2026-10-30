@@ -212,9 +212,9 @@
       "sha256": "ddea38d8999233f3a5f1733c95f99ef6b57957d26bbde776906c8937ffdeffe3"
     },
     "mrcjkb/rustaceanvim": {
-      "revision": "fc3bbbaf54b4c0e0717dfabf7e30350d4de8cfed",
-      "url": "https://codeload.github.com/mrcjkb/rustaceanvim/tar.gz/fc3bbbaf54b4c0e0717dfabf7e30350d4de8cfed",
-      "sha256": "48713f7e8d71ff45bb722f61a5efea4a4f6f919b8c4a1bcae6132beb223916ad"
+      "revision": "b7f84928e254bce1cf9ca6afda5f1cfd5ba01591",
+      "url": "https://codeload.github.com/mrcjkb/rustaceanvim/tar.gz/b7f84928e254bce1cf9ca6afda5f1cfd5ba01591",
+      "sha256": "99988281909756c785fd8c5e0d648b55dac543200ba586445e729afdc0f6c5ac"
     },
     "mrjones2014/smart-splits.nvim": {
       "revision": "dd40c3a03ef71bcdf77fb4b14668cc1320293f48",
@@ -282,9 +282,9 @@
       "sha256": "603704c5ce7aa7e51e21f86ffb05db61c049560a543422017508a7f926f31bac"
     },
     "saghen/blink.cmp": {
-      "revision": "327fff91fe6af358e990be7be1ec8b78037d2138",
-      "url": "https://codeload.github.com/saghen/blink.cmp/tar.gz/327fff91fe6af358e990be7be1ec8b78037d2138",
-      "sha256": "0a433354033c28378dae3e53699564b864b6f7a1392dc18ebc032d391d7c46b7"
+      "revision": "78336bc89ee5365633bcf754d93df01678b5c08f",
+      "url": "https://codeload.github.com/saghen/blink.cmp/tar.gz/78336bc89ee5365633bcf754d93df01678b5c08f",
+      "sha256": "74a12c86fd74ea28b37cccad0cf41ec2afff6a0ee07747ad38cc6eee869cce38"
     },
     "sindrets/diffview.nvim": {
       "revision": "4516612fe98ff56ae0415a259ff6361a89419b0a",
