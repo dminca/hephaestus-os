@@ -53,7 +53,7 @@ jobs:
           node --test tests/renovate-config.test.cjs tests/dependencies/node-runtime.test.cjs tests/dependencies/npm-install.test.cjs tests/dependencies/renovate-policy.test.cjs tests/dependencies/editor-tools.test.cjs
           .github/renovate/node_modules/.bin/renovate-config-validator --strict renovate.json5
           git diff --exit-code -- '**/package*.json'
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version-file: files/system/usr/share/hephaestus/python/.python-version
       - name: Validate Python hashes and lock synchronization
