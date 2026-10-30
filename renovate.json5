@@ -1,7 +1,13 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
-  "enabledManagers": ["npm", "gomod", "github-actions", "custom.regex"],
+  "enabledManagers": ["npm", "gomod", "pip-compile", "pip_requirements", "github-actions", "custom.regex"],
+  "pip-compile": {
+    "managerFilePatterns": ["/^files/system/usr/share/hephaestus/python/requirements\\.txt$/"]
+  },
+  "pip_requirements": {
+    "managerFilePatterns": ["/^\\.github/python-tools\\.txt$/"]
+  },
   "schedule": ["before 7am on Monday"],
   "timezone": "UTC",
   "dependencyDashboard": true,
@@ -12,7 +18,7 @@
     "enabled": true,
     "schedule": ["before 7am on Monday"],
     "automerge": false,
-    "groupName": "npm lockfile maintenance"
+    "groupName": "dependency lockfile maintenance"
   },
   "customManagers": [
     {
@@ -58,23 +64,37 @@
     },
     {
       "customType": "regex",
-      "description": "Track the installed goimports module",
+      "description": "Track locked Rust source revisions",
       "managerFilePatterns": ["files/scripts/install-profile.sh"],
       "matchStrings": [
-        "go install golang.org/x/tools/cmd/goimports@(?<currentValue>v[0-9][A-Za-z0-9.+-]*)"
+        "cargo install --locked --git https://github.com/(?<depName>[^\\s]+)\\s+\\\\\\s+--rev (?<currentDigest>[a-f0-9]{40})"
       ],
-      "datasourceTemplate": "go",
-      "depNameTemplate": "golang.org/x/tools",
-      "versioningTemplate": "semver"
+      "packageNameTemplate": "https://github.com/{{{depName}}}",
+      "currentValueTemplate": "HEAD",
+      "datasourceTemplate": "git-refs"
     },
     {
       "customType": "regex",
-      "description": "Track the installed yamlfix package",
-      "managerFilePatterns": ["files/scripts/install-profile.sh"],
-      "matchStrings": ["yamlfix==(?<currentValue>[0-9][A-Za-z0-9.+-]*)"],
-      "datasourceTemplate": "pypi",
-      "depNameTemplate": "yamlfix",
-      "versioningTemplate": "pep440"
+      "description": "Track pinned BlueBuild CLI versions",
+      "managerFilePatterns": ["recipes/recipe.yml", ".github/workflows/build.yml"],
+      "matchStrings": ["(?:blue-build-tag|cli_version):\\s*(?<currentValue>v[0-9.]+)"],
+      "depNameTemplate": "blue-build/cli",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "description": "Track immutable BlueBuild module images",
+      "managerFilePatterns": ["recipes/recipe.yml"],
+      "matchStrings": ["source: (?<depName>ghcr.io/blue-build/modules/[^:]+):(?<currentValue>[^@\\s]+)@(?<currentDigest>sha256:[a-f0-9]{64})"],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "Track immutable Nushell runtime image",
+      "managerFilePatterns": ["recipes/recipe.yml"],
+      "matchStrings": ["nushell-version: (?<currentValue>[^@\\s]+)@(?<currentDigest>sha256:[a-f0-9]{64})"],
+      "depNameTemplate": "ghcr.io/blue-build/nushell-image",
+      "datasourceTemplate": "docker"
     }
   ],
   "packageRules": [
@@ -121,14 +141,72 @@
     },
     {
       "matchManagers": ["npm"],
+      "matchFileNames": ["files/system/usr/share/hephaestus/node/package.json"],
       "matchUpdateTypes": ["major"],
       "dependencyDashboardApproval": true,
       "groupName": "npm major upgrades"
     },
     {
       "matchManagers": ["npm"],
+      "matchFileNames": ["files/system/usr/share/hephaestus/node/package.json"],
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
       "groupName": "npm dependencies"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchFileNames": [".github/renovate/package.json"],
+      "groupName": "Renovate runtime",
+      "constraintsFiltering": "strict"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchFileNames": ["files/system/usr/share/hephaestus/node/package.json"],
+      "constraintsFiltering": "strict"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["engines"],
+      "matchPackageNames": ["node"],
+      "allowedVersions": "^24.11.0"
+    },
+    {
+      "description": "The locked Renovate native dependency graph requires Node 24.15",
+      "matchManagers": ["npm"],
+      "matchFileNames": [".github/renovate/package.json"],
+      "matchDepTypes": ["engines"],
+      "matchPackageNames": ["node"],
+      "allowedVersions": "^24.15.0"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["engines", "packageManager"],
+      "matchPackageNames": ["npm"],
+      "allowedVersions": "^11.0.0"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchFileNames": ["files/system/usr/share/hephaestus/node/package.json"],
+      "matchPackageNames": ["typescript", "svelte-language-server", "typescript-language-server"],
+      "groupName": "TypeScript and Svelte compatibility"
+    },
+    {
+      "description": "TypeScript 7 drops tsserver and is outside the pinned Svelte peer range",
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["typescript"],
+      "allowedVersions": "<7"
+    },
+    {
+      "matchManagers": ["pip-compile", "pip_requirements"],
+      "groupName": "Python tools"
+    },
+    {
+      "matchPackageNames": ["oxalica/nil", "nerdypepper/statix"],
+      "groupName": "Rust source pins"
+    },
+    {
+      "matchPackageNames": ["blue-build/cli", "ghcr.io/blue-build/modules/**", "ghcr.io/blue-build/nushell-image"],
+      "groupName": "BlueBuild tooling",
+      "dependencyDashboardApproval": true
     },
     {
       "matchManagers": ["gomod"],

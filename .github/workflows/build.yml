@@ -30,17 +30,122 @@ jobs:
           cache: false
       - run: go test -count=1 ./...
 
+  dependencies:
+    name: Validate locked dependencies
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .github/renovate/package.json
+      - name: Install declared npm and locked projects
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: "true"
+        run: |
+          package_manager=$(node -p "require('./.github/renovate/package.json').packageManager")
+          npm install --global "$package_manager"
+          (cd .github/renovate && npm ci --no-audit --no-fund)
+          (cd files/system/usr/share/hephaestus/node && npm ci --omit=dev --no-audit --no-fund)
+      - name: Check dependency behavior and Renovate configuration
+        run: |
+          node --test tests/renovate-config.test.cjs tests/dependencies/node-runtime.test.cjs tests/dependencies/npm-install.test.cjs tests/dependencies/renovate-policy.test.cjs tests/dependencies/editor-tools.test.cjs
+          .github/renovate/node_modules/.bin/renovate-config-validator --strict renovate.json5
+          git diff --exit-code -- '**/package*.json'
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version-file: files/system/usr/share/hephaestus/python/.python-version
+      - name: Validate Python hashes and lock synchronization
+        run: |
+          pip install -r .github/python-tools.txt
+          cd files/system/usr/share/hephaestus/python
+          pip-compile --generate-hashes --allow-unsafe --strip-extras --no-emit-index-url --output-file=requirements.txt requirements.in
+          git diff --exit-code -- requirements.txt
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version-file: files/system/usr/share/hephaestus/go-tools/go.mod
+      - name: Validate native tool installation constraints
+        run: |
+          cargo --version
+          rustc --version
+          go test -count=1 -tags=integration ./tests -run 'TestPython|TestGoTool|TestRust' -v
+
+  node-runtimes:
+    name: Check Node ${{ matrix.node }} / npm ${{ matrix.npm }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["24.11.0", "24.15.0", "24", "24.10.0", "24.14.0", "22", "26"]
+        npm: ["declared"]
+        include:
+          - node: "24"
+            npm: "10"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .github/renovate/package.json
+      - name: Install test dependencies with the supported runtime
+        run: |
+          package_manager=$(node -p "require('./.github/renovate/package.json').packageManager")
+          npm install --global "$package_manager"
+          (cd .github/renovate && npm ci --no-audit --no-fund)
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Select npm version
+        env:
+          NPM_VERSION: ${{ matrix.npm }}
+        run: |
+          if [ "$NPM_VERSION" = declared ]; then
+            package_manager=$(node -p "require('./.github/renovate/package.json').packageManager")
+            npm install --global "$package_manager"
+          else
+            npm install --global "npm@$NPM_VERSION"
+          fi
+      - name: Test real runtime acceptance and rejection
+        run: node --test tests/dependencies/node-runtime.test.cjs
+      - name: Clean-install full graphs on supported runtimes
+        if: matrix.npm == 'declared' && (matrix.node == '24.15.0' || matrix.node == '24')
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: "true"
+        run: |
+          (cd .github/renovate && npm ci --no-audit --no-fund)
+          (cd files/system/usr/share/hephaestus/node && npm ci --omit=dev --no-audit --no-fund)
+      - name: Clean-install editor graph at its lower supported boundary
+        if: matrix.npm == 'declared' && matrix.node == '24.11.0'
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: "true"
+        run: cd files/system/usr/share/hephaestus/node && npm ci --omit=dev --no-audit --no-fund
+
   parsers:
     name: Build and load every Treesitter parser
-    needs: tests
+    needs: [tests, dependencies, node-runtimes]
     runs-on: ubuntu-latest
     container: fedora:44
     permissions:
       contents: read
     steps:
       - name: Install native parser build dependencies
-        run: dnf install -y git golang neovim gcc gcc-c++ nodejs24 curl-minimal tar gzip unzip xz
+        run: dnf install -y git golang neovim gcc gcc-c++ nodejs24 nodejs24-npm curl-minimal tar gzip unzip xz skopeo jq
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Verify rolling base matches parser validation
+        run: |
+          source /etc/os-release
+          expected="$VERSION_ID"
+          base_version=$(skopeo inspect docker://ghcr.io/secureblue/kinoite-main-hardened:latest | jq -r '.Labels["org.opencontainers.image.version"]')
+          bash files/system/usr/share/hephaestus/check-fedora-version.sh "$expected" "$base_version"
+      - name: Install and check native editor tools
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: "true"
+        run: |
+          cd files/system/usr/share/hephaestus/node
+          npm ci --omit=dev --no-audit --no-fund
+          node --test "$GITHUB_WORKSPACE/tests/dependencies/editor-tools.test.cjs"
       - name: Check Neovim build validation
         run: go test -count=1 ./tests -run 'TestParserBuildReportsCompleteFailures|TestLanguageServerBuildValidation' -v
       - name: Fetch pinned tools and compile all configured parsers
@@ -75,6 +180,7 @@ jobs:
         uses: blue-build/github-action@c295af864f2802fc6aea227507af43d35823db81 # v1.13
         with:
           recipe: ${{ matrix.recipe }}
+          cli_version: v0.9.37
           cosign_private_key: ${{ secrets.SIGNING_SECRET }}
           registry_token: ${{ github.token }}
           pr_event_number: ${{ github.event.number }}

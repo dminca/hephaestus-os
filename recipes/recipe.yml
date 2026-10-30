@@ -8,6 +8,8 @@ description: Secureblue Kinoite with personal workstation customizations.
 # the base image to build on top of (FROM) and the version tag to use
 base-image: ghcr.io/secureblue/kinoite-main-hardened
 image-version: latest # You can pin to a specific version of Fedora as well
+blue-build-tag: v0.9.37
+nushell-version: 0.113.1@sha256:11610351f920a8284a0b60032e9d9e3d26d1fe273f431d30835306c18aa32ddb
 platforms:
   - linux/amd64
 
@@ -15,11 +17,13 @@ platforms:
 # you can include multiple instances of the same module
 modules:
   - type: files
+    source: ghcr.io/blue-build/modules/files:latest@sha256:c93091889e5552a25d8169f8b5ba6d2cf201fd924f342025e6f2388c1ac4a356
     files:
       - source: system
         destination: / # copies files/system/* (* means everything inside it) into your image's root folder /
 
   - type: dnf
+    source: ghcr.io/blue-build/modules/dnf:latest@sha256:e6cffa08197dc55f2cdc9f596e5bae6af4dc82e8a33884ff5a4edccc251b0218
     install:
       packages:
         - zsh
@@ -76,11 +80,13 @@ modules:
         - firefox-langpacks
 
   - type: script
+    source: ghcr.io/blue-build/modules/script:latest@sha256:d6076360da9195e2a6d781043a1b049bede3d2389757912a828a957bc78929b8
     scripts:
       - install-flow-desktop.sh
       - install-profile.sh
 
   - type: default-flatpaks@v1
+    source: ghcr.io/blue-build/modules/default-flatpaks:v1@sha256:ade1b8ec61abe6dd5fc8268583b150a543d72163d2f59ea7d6048e55e1e40ffc
     notify: true
     system:
       repo-name: flathub
@@ -94,3 +100,4 @@ modules:
         - org.mozilla.firefox
 
   - type: signing # this sets up the proper policy & signing files for signed images to work fully
+    source: ghcr.io/blue-build/modules/signing:latest@sha256:6227e5ac294e9b60a77836775700df879d8a39b184ca3e511edf73cc58f1f4a6
