@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -99,6 +100,35 @@ func TestProfileBuildInstallsHunk(t *testing.T) {
 	check := strings.Index(script, "hunk --version")
 	if install < 0 || check <= install {
 		t.Fatal("Hunk must be installed before its version is checked")
+	}
+}
+
+func TestProfileBuildInstallsFdWithHomebrew(t *testing.T) {
+	root := repository(t)
+	module := readRecipeModule(t, "dnf")
+	if slices.Contains(module.Install.Packages, "fd-find") {
+		t.Fatal("fd must not be installed from the Fedora fd-find package")
+	}
+	brew := readRecipeModule(t, "brew")
+	if !strings.HasPrefix(brew.Source, "ghcr.io/blue-build/modules/brew:latest@sha256:") {
+		t.Fatal("recipe must use a pinned BlueBuild Brew module")
+	}
+	recipe := readFile(t, filepath.Join(root, "recipes/recipe.yml"))
+	if !strings.Contains(recipe, "- install-fd.sh") {
+		t.Fatal("recipe must run the Homebrew fd installer")
+	}
+	script := readFile(t, filepath.Join(root, "files/scripts/install-fd.sh"))
+	for _, expected := range []string{
+		"/usr/share/homebrew/home/linuxbrew/.linuxbrew/bin/brew",
+		"setpriv --reuid=1000 --regid=1000",
+		"install fd",
+		"/home/linuxbrew/.linuxbrew/opt/fd/bin/fd",
+		"/usr/libexec/hephaestus/bin/fd",
+		`"$destination" --version`,
+	} {
+		if !strings.Contains(script, expected) {
+			t.Errorf("Homebrew fd installer is missing %q", expected)
+		}
 	}
 }
 

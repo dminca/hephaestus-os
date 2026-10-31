@@ -43,10 +43,10 @@ type sourcePinFixture struct {
 	SHA256   string `json:"sha256"`
 }
 
-type sourceSelectionFixture struct {
+type lazyPluginPinFixture struct {
+	Branch     string `json:"branch"`
+	Commit     string `json:"commit"`
 	Repository string `json:"repository"`
-	Ref        string `json:"ref"`
-	Revision   string `json:"revision"`
 	Type       string `json:"type"`
 }
 
@@ -100,10 +100,7 @@ func prepareProfileLock(t *testing.T, assets, api, scenario, checksum string) st
 		"folke/lazy.nvim": {Revision: revision, URL: "https://example.org/lazy", SHA256: checksum},
 		"catppuccin/bat":  {Revision: reviewedBatRevision, URL: "https://example.org/bat", SHA256: checksum},
 	}
-	endpoint := "repos/example/plugin/commits/HEAD"
-	example := sourceSelectionFixture{
-		Repository: "example/plugin", Ref: "HEAD", Revision: revision, Type: "branch",
-	}
+	pluginCommit := revision
 	switch scenario {
 	case "ReusesExistingPins":
 		sources["example/plugin"] = sourcePinFixture{
@@ -113,38 +110,28 @@ func prepareProfileLock(t *testing.T, assets, api, scenario, checksum string) st
 		sources["example/plugin"] = sourcePinFixture{
 			Revision: revision, URL: "https://example.org/plugin", SHA256: checksum,
 		}
-		example.Revision = nextRevision
-	case "InvalidRevision":
-		example.Type = "release"
-		example.Ref = "v1.0.0"
-		example.Revision = ""
-		nextRevision = "not-a-commit"
-		endpoint = "repos/example/plugin/commits/v1.0.0"
-	case "APIFailure":
-		example.Type = "release"
-		example.Ref = "v1.0.0"
-		example.Revision = ""
-		endpoint = "repos/example/plugin/commits/v1.0.0"
+		pluginCommit = nextRevision
+	case "InvalidCommit":
+		pluginCommit = "not-a-commit"
 	}
 	path := filepath.Join(assets, "sources.lock.json")
 	writeJSON(t, path, map[string]any{
 		"nix_config_revision": "5ea74ed40e60c520daae0a94cc50e05857abcb63",
 		"sources":             sources,
 	})
-	writeJSON(t, filepath.Join(assets, "sources.json"), map[string]any{"sources": []sourceSelectionFixture{
-		{Repository: "folke/lazy.nvim", Ref: "HEAD", Revision: revision, Type: "branch"},
-		{Repository: "catppuccin/bat", Ref: reviewedBatRevision, Revision: reviewedBatRevision, Type: "held"},
-		example,
-	}})
-	if scenario != "APIFailure" {
-		commit := revision
-		if scenario == "UpdatesBranchDigest" {
-			commit = nextRevision
-		} else if scenario == "InvalidRevision" {
-			commit = nextRevision
-		}
-		writeJSON(t, filepath.Join(api, endpoint), map[string]string{"sha": commit})
-	}
+	mkdir(t, filepath.Join(assets, "nvim"))
+	writeJSON(t, filepath.Join(assets, "nvim/lazy-lock.json"), map[string]lazyPluginPinFixture{
+		"lazy.nvim": {
+			Branch: "stable", Commit: revision, Repository: "folke/lazy.nvim", Type: "branch",
+		},
+		"catppuccin-bat": {
+			Branch: reviewedBatRevision, Commit: reviewedBatRevision,
+			Repository: "catppuccin/bat", Type: "held",
+		},
+		"plugin": {
+			Branch: "HEAD", Commit: pluginCommit, Repository: "example/plugin", Type: "branch",
+		},
+	})
 	return path
 }
 
@@ -194,13 +181,12 @@ func TestLockTools(t *testing.T) {
 			}
 			scenarios := []lockScenario{
 				{name: "Success"},
-				{name: "APIFailure", expectedError: "GitHub request failed"},
 				{name: "DownloadFailure", expectedError: "Download failed"},
 			}
 			if tool == "lock-profile" {
 				scenarios = append(scenarios,
 					lockScenario{name: "ReusesExistingPins"},
-					lockScenario{name: "InvalidRevision", expectedError: "invalid commit"},
+					lockScenario{name: "InvalidCommit", expectedError: "invalid commit"},
 					lockScenario{name: "UpdatesBranchDigest"},
 				)
 			} else {
@@ -253,8 +239,6 @@ func checkLockScenario(t *testing.T, binary, tool string, scenario lockScenario)
 		"CALL_LOG="+log, "API_FIXTURES="+api, "FAIL_API=", "FAIL_DOWNLOAD=",
 	)
 	switch scenario.name {
-	case "APIFailure":
-		command.Env = append(command.Env, "FAIL_API=1")
 	case "DownloadFailure":
 		command.Env = append(command.Env, "FAIL_DOWNLOAD=1")
 	}

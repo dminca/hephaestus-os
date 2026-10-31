@@ -68,9 +68,17 @@ func TestSystemFlatpaks(t *testing.T) {
 	if !strings.HasPrefix(module.Source, "ghcr.io/blue-build/modules/default-flatpaks:v2@sha256:") {
 		t.Fatal("Flatpak module source must match the v2 configuration")
 	}
+	var systemApps []string
+	for _, configuration := range module.Configurations {
+		if configuration.Scope == "system" {
+			systemApps = append(systemApps, configuration.Install...)
+		}
+	}
+	if !slices.Equal(systemApps, []string{"com.nextcloud.desktopclient.nextcloud"}) {
+		t.Fatalf("unexpected system Flatpaks: %v", systemApps)
+	}
 	for _, application := range []string{
 		"com.nextcloud.desktopclient.nextcloud",
-		"org.signal.Signal",
 	} {
 		t.Run(application, func(t *testing.T) {
 			if !module.installsSystemFlatpak(application) {
@@ -89,9 +97,9 @@ modules:
         repo:
           name: flathub
         install:
-          - org.signal.Signal
+          - org.example.DesktopApp
 `
-	const flow = `modules: [{type: default-flatpaks@v2, configurations: [{scope: system, repo: {name: flathub}, install: [org.signal.Signal]}]}]`
+	const flow = `modules: [{type: default-flatpaks@v2, configurations: [{scope: system, repo: {name: flathub}, install: [org.example.DesktopApp]}]}]`
 	const indented = `
 modules:
     - type: default-flatpaks@v2
@@ -100,7 +108,7 @@ modules:
             repo:
                 name: flathub
             install:
-                - org.signal.Signal
+                - org.example.DesktopApp
 `
 	for _, scenario := range []struct {
 		name    string
@@ -110,19 +118,19 @@ modules:
 		{"block", block, true},
 		{"different indentation", indented, true},
 		{"flow", flow, true},
-		{"comment", strings.ReplaceAll(block, "org.signal.Signal", "org.signal.Signal # desktop app"), true},
+		{"comment", strings.ReplaceAll(block, "org.example.DesktopApp", "org.example.DesktopApp # desktop app"), true},
 		{"default remote", strings.ReplaceAll(flow, "repo: {name: flathub}, ", ""), true},
 		{"user scope", strings.ReplaceAll(flow, "scope: system", "scope: user"), false},
 		{"other remote", strings.ReplaceAll(flow, "name: flathub", "name: other"), false},
 		{"other remote URL", strings.ReplaceAll(flow, "name: flathub", "name: flathub, url: https://example.org/repo.flatpakrepo"), false},
-		{"missing package", strings.ReplaceAll(flow, "[org.signal.Signal]", "[]"), false},
+		{"missing package", strings.ReplaceAll(flow, "[org.example.DesktopApp]", "[]"), false},
 	} {
 		t.Run(scenario.name, func(t *testing.T) {
 			module, err := parseRecipeModule(scenario.content, "default-flatpaks@v2")
 			if err != nil {
 				t.Fatal(err)
 			}
-			if got := module.installsSystemFlatpak("org.signal.Signal"); got != scenario.want {
+			if got := module.installsSystemFlatpak("org.example.DesktopApp"); got != scenario.want {
 				t.Fatalf("system Flatpak assertion = %t, want %t", got, scenario.want)
 			}
 		})

@@ -61,8 +61,36 @@ test("custom managers extract both Rust revisions and every BlueBuild module dig
   const modules = config.customManagers.find((manager) => manager.description === "Track immutable BlueBuild module images");
   const recipe = readFileSync(path.join(root, "recipes/recipe.yml"), "utf8");
   const images = extractPackageFile(recipe, "recipes/recipe.yml", modules);
-  assert.equal(images.deps.length, 5);
+  assert.equal(images.deps.length, 6);
   for (const dep of images.deps) assert.match(dep.currentDigest, /^sha256:[a-f0-9]{64}$/);
+});
+
+test("custom managers track lazy.nvim branch and release pins but leave held pins alone", async () => {
+  const { extractPackageFile } = await load("modules/manager/custom/regex/index.js");
+  const filename = "files/system/usr/share/hephaestus/nvim/lazy-lock.json";
+  const content = readFileSync(path.join(root, filename), "utf8");
+  const lock = JSON.parse(content);
+  for (const [description, type] of [
+    ["Track branch commits in the lazy.nvim plugin lock", "branch"],
+    ["Track release tags in the lazy.nvim plugin lock", "release"],
+  ]) {
+    const manager = config.customManagers.find((entry) => entry.description === description);
+    const extracted = extractPackageFile(content, filename, manager);
+    const expected = Object.values(lock).filter((pin) => pin.type === type);
+    assert.equal(extracted.deps.length, expected.length);
+    for (const pin of expected) {
+      const dep = extracted.deps.find((entry) => entry.depName === pin.repository);
+      assert.ok(dep, `Renovate did not extract ${pin.repository}`);
+      assert.equal(dep.currentDigest, pin.commit);
+      assert.equal(dep.currentValue, type === "branch" && pin.branch === "HEAD" ? undefined : pin.branch);
+    }
+  }
+  const held = Object.values(lock).filter((pin) => pin.type === "held");
+  assert.ok(held.length > 0);
+  for (const pin of held) {
+    assert.ok(!config.customManagers.some((manager) => manager.matchStrings.some((pattern) =>
+      new RegExp(pattern).test(JSON.stringify(pin)))));
+  }
 });
 
 test("Rust revision updates resolve the default branch without treating HEAD as a named ref", async () => {

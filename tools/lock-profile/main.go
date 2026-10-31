@@ -21,16 +21,14 @@ type sourcePin struct {
 	SHA256   string `json:"sha256"`
 }
 
-type sourceSelection struct {
+type pluginPin struct {
+	Branch     string `json:"branch"`
+	Commit     string `json:"commit"`
 	Repository string `json:"repository"`
-	Ref        string `json:"ref"`
-	Revision   string `json:"revision"`
 	Type       string `json:"type"`
 }
 
-type sourceManifest struct {
-	Sources []sourceSelection `json:"sources"`
-}
+type lazyLock map[string]pluginPin
 
 type sourceLock struct {
 	NixConfigRevision string               `json:"nix_config_revision"`
@@ -50,28 +48,73 @@ func updateLock() error {
 		return err
 	}
 	assets := filepath.Join(root, "files/system/usr/share/hephaestus")
-	manifestPath := filepath.Join(assets, "sources.json")
-	content, err := os.ReadFile(manifestPath)
-	if err != nil {
-		return err
-	}
-	var manifest sourceManifest
-	if err := json.Unmarshal(content, &manifest); err != nil {
-		return fmt.Errorf("read source manifest: %w", err)
-	}
-	if len(manifest.Sources) == 0 {
-		return errors.New("source manifest is empty")
-	}
-
 	config, err := os.ReadFile(filepath.Join(assets, "profile/config/nvim/lua/hephaestus/plugins.lua"))
 	if err != nil {
 		return err
 	}
-	repositories := map[string]bool{"folke/lazy.nvim": true, "catppuccin/bat": true}
+	expected := map[string]string{
+		"folke/lazy.nvim": "lazy.nvim",
+		"catppuccin/bat":  "catppuccin-bat",
+	}
 	pattern := regexp.MustCompile(`\{\s*"([\w.-]+/[\w.-]+)"`)
 	for _, match := range pattern.FindAllStringSubmatch(string(config), -1) {
-		repositories[match[1]] = true
+		expected[match[1]] = lazyPluginName(match[1])
 	}
+
+	lazyLockPath := filepath.Join(assets, "nvim/lazy-lock.json")
+	content, err := os.ReadFile(lazyLockPath)
+	if err != nil {
+		return err
+	}
+	var pins lazyLock
+	if err := json.Unmarshal(content, &pins); err != nil {
+		return fmt.Errorf("read lazy.nvim lockfile: %w", err)
+	}
+	if len(pins) == 0 {
+		return errors.New("lazy.nvim lockfile is empty")
+	}
+
+	commitPattern := regexp.MustCompile(`^[0-9a-f]{40}$`)
+	repositoryPattern := regexp.MustCompile(`^[\w.-]+/[\w.-]+$`)
+	repositories := make(map[string]pluginPin, len(pins))
+	for name, pin := range pins {
+		if !repositoryPattern.MatchString(pin.Repository) {
+			return fmt.Errorf("invalid repository for lazy.nvim plugin %s: %q", name, pin.Repository)
+		}
+		if !commitPattern.MatchString(pin.Commit) {
+			return fmt.Errorf("invalid commit for lazy.nvim plugin %s: %q", name, pin.Commit)
+		}
+		if pin.Branch == "" {
+			return fmt.Errorf("lazy.nvim plugin %s has an empty branch or tag", name)
+		}
+		switch pin.Type {
+		case "branch", "release":
+		case "held":
+			if pin.Branch != pin.Commit {
+				return fmt.Errorf("held lazy.nvim plugin %s must use its commit as branch", name)
+			}
+		default:
+			return fmt.Errorf("unknown pin policy %q for lazy.nvim plugin %s", pin.Type, name)
+		}
+		expectedName, exists := expected[pin.Repository]
+		if !exists {
+			return fmt.Errorf("lazy.nvim lockfile includes unused repository %s", pin.Repository)
+		}
+		if expectedName != name {
+			return fmt.Errorf("lazy.nvim lock name for %s is %q, want %q", pin.Repository, name, expectedName)
+		}
+		if _, exists := repositories[pin.Repository]; exists {
+			return fmt.Errorf("lazy.nvim lockfile has duplicate repository %s", pin.Repository)
+		}
+		repositories[pin.Repository] = pin
+		delete(expected, pin.Repository)
+	}
+	if len(expected) != 0 {
+		for repository, name := range expected {
+			return fmt.Errorf("lazy.nvim lockfile is missing %s (%s)", repository, name)
+		}
+	}
+
 	path := filepath.Join(assets, "sources.lock.json")
 	existing := sourceLock{NixConfigRevision: nixConfigRevision}
 	content, err = os.ReadFile(path)
@@ -86,46 +129,9 @@ func updateLock() error {
 		return err
 	}
 
-	commitPattern := regexp.MustCompile(`^[0-9a-f]{40}$`)
 	checksumPattern := regexp.MustCompile(`^[0-9a-f]{64}$`)
-	selections := make(map[string]sourceSelection, len(manifest.Sources))
-	for _, selection := range manifest.Sources {
-		if !repositories[selection.Repository] {
-			return fmt.Errorf("source manifest includes unused repository %s", selection.Repository)
-		}
-		if _, exists := selections[selection.Repository]; exists {
-			return fmt.Errorf("source manifest has duplicate repository %s", selection.Repository)
-		}
-		if selection.Ref == "" {
-			return fmt.Errorf("source manifest has empty ref for %s", selection.Repository)
-		}
-		switch selection.Type {
-		case "branch":
-			if !commitPattern.MatchString(selection.Revision) {
-				return fmt.Errorf("invalid branch digest for %s: %q", selection.Repository, selection.Revision)
-			}
-		case "release":
-			if selection.Revision != "" {
-				return fmt.Errorf("release source %s must not pin a separate revision", selection.Repository)
-			}
-		case "held":
-			if !commitPattern.MatchString(selection.Ref) || selection.Ref != selection.Revision {
-				return fmt.Errorf("held source %s must use the same full commit for ref and revision", selection.Repository)
-			}
-		default:
-			return fmt.Errorf("unknown source policy %q for %s", selection.Type, selection.Repository)
-		}
-		selections[selection.Repository] = selection
-	}
-	if len(selections) != len(repositories) {
-		for repository := range repositories {
-			if _, exists := selections[repository]; !exists {
-				return fmt.Errorf("source manifest is missing repository %s", repository)
-			}
-		}
-	}
-	names := make([]string, 0, len(selections))
-	for repository := range selections {
+	names := make([]string, 0, len(repositories))
+	for repository := range repositories {
 		names = append(names, repository)
 	}
 	sort.Strings(names)
@@ -143,23 +149,7 @@ func updateLock() error {
 	}
 	sources := make(map[string]sourcePin, len(names))
 	for _, repository := range names {
-		selection := selections[repository]
-		revision := selection.Revision
-		if selection.Type == "release" {
-			var commit struct {
-				SHA string `json:"sha"`
-			}
-			if err := lockfile.GitHubJSON("repos/"+repository+"/commits/"+selection.Ref, &commit); err != nil {
-				return err
-			}
-			if !commitPattern.MatchString(commit.SHA) {
-				return fmt.Errorf("invalid commit for %s: %q", repository, commit.SHA)
-			}
-			revision = commit.SHA
-		}
-		if selection.Type == "held" {
-			revision = selection.Ref
-		}
+		revision := repositories[repository].Commit
 		pin, exists := existing.Sources[repository]
 		if exists && pin.Revision == revision {
 			sources[repository] = pin
@@ -174,4 +164,11 @@ func updateLock() error {
 		fmt.Printf("Locked %s at %s\n", repository, revision)
 	}
 	return lockfile.WriteJSON(path, sourceLock{NixConfigRevision: existing.NixConfigRevision, Sources: sources})
+}
+
+func lazyPluginName(repository string) string {
+	if repository == "catppuccin/nvim" {
+		return "catppuccin"
+	}
+	return filepath.Base(repository)
 }
