@@ -34,7 +34,6 @@ modules:
         - golang
         - powerline-go
         - eza
-        - fd-find
         - ripgrep
         - atuin
         - bat
@@ -74,11 +73,15 @@ modules:
         - minisign
         - gstreamer1
         - gstreamer1-plugin-libav
+  - type: brew
+    source: ghcr.io/blue-build/modules/brew:latest@sha256:ace50a5f0afa9af9e5c4c96fe40a0dfdb786cc717c1df9cbf5dcacdb5ed33bb5
+    brew-analytics: false
   - type: script
     source: ghcr.io/blue-build/modules/script:latest@sha256:d6076360da9195e2a6d781043a1b049bede3d2389757912a828a957bc78929b8
     scripts:
       - install-flow-desktop.sh
       - install-profile.sh
+      - install-fd.sh
 
   - type: default-flatpaks@v2
     source: ghcr.io/blue-build/modules/default-flatpaks:v2@sha256:9a57a74188d54cd717520a6c434ddfa41346f769b48bbb3bbf418538180f8397
@@ -89,7 +92,6 @@ modules:
           name: flathub
         install:
           - com.nextcloud.desktopclient.nextcloud
-          - org.signal.Signal
       - scope: user
         notify: true
         repo:

@@ -18,6 +18,7 @@ for _, spec in ipairs(specs) do
 end
 require("lazy").setup(specs, {
   root = vim.fn.stdpath("data") .. "/hephaestus-lazy",
+  lockfile = vim.g.hephaestus_assets .. "/nvim/lazy-lock.json",
   defaults = { lazy = false },
   install = { missing = false },
   checker = { enabled = false },

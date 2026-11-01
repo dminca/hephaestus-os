@@ -23,20 +23,20 @@
   "customManagers": [
     {
       "customType": "regex",
-      "description": "Track Git branch commits for locked editor sources",
-      "managerFilePatterns": ["files/system/usr/share/hephaestus/sources.json"],
+      "description": "Track branch commits in the lazy.nvim plugin lock",
+      "managerFilePatterns": ["files/system/usr/share/hephaestus/nvim/lazy-lock.json"],
       "matchStrings": [
-        "\"repository\":\\s*\"(?<depName>[^\"]+)\",\\s*\"ref\":\\s*\"(?:HEAD|(?<currentValue>[^\"]+))\",\\s*\"revision\":\\s*\"(?<currentDigest>[a-f0-9]{40})\",\\s*\"type\":\\s*\"branch\""
+        "\"branch\":\\s*\"(?:HEAD|(?<currentValue>[^\"]+))\",\\s*\"commit\":\\s*\"(?<currentDigest>[a-f0-9]{40})\",\\s*\"repository\":\\s*\"(?<depName>[^\"]+)\",\\s*\"type\":\\s*\"branch\""
       ],
       "packageNameTemplate": "https://github.com/{{{depName}}}",
       "datasourceTemplate": "git-refs"
     },
     {
       "customType": "regex",
-      "description": "Track release tags for editor sources",
-      "managerFilePatterns": ["files/system/usr/share/hephaestus/sources.json"],
+      "description": "Track release tags in the lazy.nvim plugin lock",
+      "managerFilePatterns": ["files/system/usr/share/hephaestus/nvim/lazy-lock.json"],
       "matchStrings": [
-        "\"repository\":\\s*\"(?<depName>[^\"]+)\",\\s*\"ref\":\\s*\"(?<currentValue>[^\"]+)\",\\s*\"revision\":\\s*\"\",\\s*\"type\":\\s*\"release\""
+        "\"branch\":\\s*\"(?<currentValue>[^\"]+)\",\\s*\"commit\":\\s*\"(?<currentDigest>[a-f0-9]{40})\",\\s*\"repository\":\\s*\"(?<depName>[^\"]+)\",\\s*\"type\":\\s*\"release\""
       ],
       "datasourceTemplate": "github-tags",
       "versioningTemplate": "semver"
@@ -98,8 +98,8 @@
   ],
   "packageRules": [
     {
-      "matchFileNames": ["files/system/usr/share/hephaestus/sources.json"],
-      "groupName": "Neovim source pins",
+      "matchFileNames": ["files/system/usr/share/hephaestus/nvim/lazy-lock.json"],
+      "groupName": "Neovim plugin pins",
       "postUpgradeTasks": {
         "commands": ["go run ./tools/lock-profile"],
         "fileFilters": ["files/system/usr/share/hephaestus/sources.lock.json"],

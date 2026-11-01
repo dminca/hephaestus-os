@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"path/filepath"
 	"regexp"
-	"strings"
 	"testing"
 )
 
-func TestRenovateBranchDigestExtraction(t *testing.T) {
+func TestRenovateLazyLockVersionExtraction(t *testing.T) {
 	root := repository(t)
 	var config struct {
 		CustomManagers []struct {
+			Description        string   `json:"description"`
 			MatchStrings       []string `json:"matchStrings"`
 			DatasourceTemplate string   `json:"datasourceTemplate"`
 		} `json:"customManagers"`
@@ -19,60 +19,76 @@ func TestRenovateBranchDigestExtraction(t *testing.T) {
 	if err := json.Unmarshal([]byte(readFile(t, filepath.Join(root, "renovate.json5"))), &config); err != nil {
 		t.Fatal(err)
 	}
-	var patterns []*regexp.Regexp
+	managers := make(map[string][]*regexp.Regexp)
 	for _, manager := range config.CustomManagers {
-		if manager.DatasourceTemplate == "git-refs" {
+		if manager.Description == "Track branch commits in the lazy.nvim plugin lock" ||
+			manager.Description == "Track release tags in the lazy.nvim plugin lock" {
+			if manager.Description == "Track branch commits in the lazy.nvim plugin lock" &&
+				manager.DatasourceTemplate != "git-refs" {
+				t.Fatal("branch pins must use the git-refs datasource")
+			}
+			if manager.Description == "Track release tags in the lazy.nvim plugin lock" &&
+				manager.DatasourceTemplate != "github-tags" {
+				t.Fatal("release pins must use the github-tags datasource")
+			}
 			for _, pattern := range manager.MatchStrings {
-				patterns = append(patterns, regexp.MustCompile(pattern))
+				managers[manager.Description] = append(managers[manager.Description], regexp.MustCompile(pattern))
 			}
 		}
 	}
-	if len(patterns) == 0 {
-		t.Fatal("missing git-refs manager")
+	for _, name := range []string{
+		"Track branch commits in the lazy.nvim plugin lock",
+		"Track release tags in the lazy.nvim plugin lock",
+	} {
+		if len(managers[name]) == 0 {
+			t.Fatalf("missing Renovate manager %q", name)
+		}
 	}
 
-	var catalog struct {
-		Sources []sourceSelectionFixture `json:"sources"`
-	}
-	if err := json.Unmarshal([]byte(readFile(t, filepath.Join(root, "files/system/usr/share/hephaestus/sources.json"))), &catalog); err != nil {
+	var lock map[string]lazyPluginPinFixture
+	if err := json.Unmarshal([]byte(readFile(t, filepath.Join(root, "files/system/usr/share/hephaestus/nvim/lazy-lock.json"))), &lock); err != nil {
 		t.Fatal(err)
 	}
-	// Cover explicit refs even if the catalog later stops using them.
-	for _, ref := range []string{"HEAD", "main", "harpoon2", "HEAD-feature"} {
-		catalog.Sources = append(catalog.Sources, sourceSelectionFixture{
-			Repository: "example/plugin", Ref: ref, Revision: strings.Repeat("a", 40), Type: "branch",
-		})
-	}
-	for _, source := range catalog.Sources {
-		t.Run(source.Repository+"/"+source.Ref, func(t *testing.T) {
-			entry, err := json.Marshal(source)
+	for name, pin := range lock {
+		t.Run(name, func(t *testing.T) {
+			entry, err := json.Marshal(pin)
 			if err != nil {
 				t.Fatal(err)
 			}
 			matches := 0
-			for _, pattern := range patterns {
+			description := ""
+			switch pin.Type {
+			case "branch":
+				description = "Track branch commits in the lazy.nvim plugin lock"
+			case "release":
+				description = "Track release tags in the lazy.nvim plugin lock"
+			case "held":
+			default:
+				t.Fatalf("unknown lazy lock type %q", pin.Type)
+			}
+			for _, pattern := range managers[description] {
 				match := pattern.FindStringSubmatch(string(entry))
 				if match == nil {
 					continue
 				}
 				matches++
-				if source.Type != "branch" {
-					t.Fatal("git-refs manager must not match release or held pins")
-				}
-				expectedValue := source.Ref
-				if expectedValue == "HEAD" {
+				expectedValue := pin.Branch
+				if pin.Type == "branch" && expectedValue == "HEAD" {
 					expectedValue = ""
 				}
 				for name, want := range map[string]string{
-					"depName": source.Repository, "currentValue": expectedValue, "currentDigest": source.Revision,
+					"depName": pin.Repository, "currentValue": expectedValue, "currentDigest": pin.Commit,
 				} {
 					if index := pattern.SubexpIndex(name); index < 0 || match[index] != want {
 						t.Errorf("capture %s: expected %q, got %v", name, want, match)
 					}
 				}
 			}
-			if source.Type == "branch" && matches != 1 {
-				t.Errorf("expected exactly one branch match, got %d", matches)
+			if pin.Type != "held" && matches != 1 {
+				t.Errorf("expected exactly one Renovate match, got %d", matches)
+			}
+			if pin.Type == "held" && matches != 0 {
+				t.Errorf("held pin must not be automatically updated, got %d matches", matches)
 			}
 		})
 	}
