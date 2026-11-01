@@ -168,6 +168,7 @@ jobs:
       contents: read
       packages: write
       id-token: write
+      attestations: write
     strategy:
       fail-fast: false # stop GH from cancelling all matrix builds if one fails
       matrix:
@@ -175,15 +176,85 @@ jobs:
           # !! Add your recipes here
           - recipe.yml
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - uses: slsa-framework/slsa-verifier/actions/installer@ea584f4502babc6f60d9bc799dbbb13c1caa9ee6 # v2.7.1
+
+      - name: Verify and pin Secureblue base image
+        env:
+          BASE_IMAGE: ghcr.io/secureblue/kinoite-main-hardened
+          RECIPE: ${{ matrix.recipe }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          base_digest="$(docker buildx imagetools inspect "${BASE_IMAGE}:latest" --format '{{json .Manifest}}' | jq -er '.digest')"
+          if [[ ! "${base_digest}" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "Could not resolve a valid Secureblue base image digest" >&2
+            exit 1
+          fi
+
+          slsa-verifier verify-image \
+            --source-uri github.com/secureblue/secureblue \
+            --source-branch live \
+            "${BASE_IMAGE}@${base_digest}"
+
+          python3 - "${BASE_IMAGE}" "${base_digest}" "${RECIPE}" <<'PY'
+          from pathlib import Path
+          import sys
+
+          base_image, digest, recipe_name = sys.argv[1:]
+          recipe = Path("recipes") / recipe_name
+          lines = recipe.read_text().splitlines(keepends=True)
+          base_lines = [i for i, line in enumerate(lines) if line.startswith("base-image:")]
+          version_lines = [i for i, line in enumerate(lines) if line.startswith("image-version:")]
+          if len(base_lines) != 1 or len(version_lines) != 1:
+              raise SystemExit(f"Expected one base-image and one image-version in {recipe}")
+
+          lines[base_lines[0]] = f"base-image: {base_image}@sha256\n"
+          lines[version_lines[0]] = f"image-version: {digest.removeprefix('sha256:')}\n"
+          Path("recipes/recipe-pinned.yml").write_text("".join(lines))
+          PY
+
       # the build is fully handled by the reusable github action
       - name: Build Custom Image
         uses: blue-build/github-action@c295af864f2802fc6aea227507af43d35823db81 # v1.13
         with:
-          recipe: ${{ matrix.recipe }}
+          recipe: recipe-pinned.yml
           cli_version: v0.9.37
           cosign_private_key: ${{ secrets.SIGNING_SECRET }}
           registry_token: ${{ github.token }}
           pr_event_number: ${{ github.event.number }}
+          skip_checkout: true
 
           # enabled by default, disable if your image is small and you want faster builds
           maximize_build_space: true
+
+      - name: Resolve published image digest
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        id: published_image
+        env:
+          IMAGE_NAME: ghcr.io/${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          image_name="${IMAGE_NAME,,}"
+          digest="$(docker buildx imagetools inspect "${image_name}:latest" --format '{{json .Manifest}}' | jq -er '.digest')"
+          if [[ ! "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "Could not resolve a valid image digest for ${image_name}:latest" >&2
+            exit 1
+          fi
+          echo "image=${image_name}" >> "${GITHUB_OUTPUT}"
+          echo "digest=${digest}" >> "${GITHUB_OUTPUT}"
+
+      - name: Attest published image provenance
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-name: ${{ steps.published_image.outputs.image }}
+          subject-digest: ${{ steps.published_image.outputs.digest }}
+          push-to-registry: true
+          github-token: ${{ github.token }}
