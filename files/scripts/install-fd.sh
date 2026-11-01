@@ -6,8 +6,10 @@ staged_prefix=/usr/share/homebrew/home/linuxbrew/.linuxbrew
 prefix_link=/home/linuxbrew/.linuxbrew
 formula=/home/linuxbrew/.linuxbrew/opt/fd/bin/fd
 destination=/usr/libexec/hephaestus/bin/fd
+system_config=/etc/homebrew/brew.env
 temporary=
 created_linuxbrew_home=false
+saved_system_config=false
 
 if [[ ! -x "$brew" ]]; then
   echo "BlueBuild did not stage Homebrew in /usr/share/homebrew" >&2
@@ -21,6 +23,9 @@ fi
 
 cleanup() {
   rm -f "$prefix_link"
+  if [[ "$saved_system_config" == true ]]; then
+    cp -p "$temporary/system-brew.env" "$system_config"
+  fi
   if [[ -n "$temporary" ]]; then
     rm -rf "$temporary"
   fi
@@ -44,6 +49,14 @@ HOMEBREW_LOGS=$temporary/logs
 HOMEBREW_TEMP=$temporary/tmp
 EOF
 chown -R 1000:1000 "$temporary"
+
+# Secureblue reloads its system brew.env last; retain its policy, override only build paths.
+if [[ -f "$system_config" ]]; then
+  cp -p "$system_config" "$temporary/system-brew.env"
+  saved_system_config=true
+  printf '\n' >> "$system_config"
+  cat "$temporary/config/homebrew/brew.env" >> "$system_config"
+fi
 
 setpriv --reuid=1000 --regid=1000 --clear-groups env \
   USER=linuxbrew \
