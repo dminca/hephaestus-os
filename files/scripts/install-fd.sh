@@ -36,11 +36,23 @@ if [[ ! -d /home/linuxbrew ]]; then
 fi
 ln -s "$staged_prefix" "$prefix_link"
 temporary=$(mktemp -d)
-chown 1000:1000 "$temporary"
+mkdir -p "$temporary"/{cache,config/homebrew,logs,tmp}
+# Homebrew loads brew.env after the process environment, so set build paths there too.
+cat > "$temporary/config/homebrew/brew.env" <<EOF
+HOMEBREW_CACHE=$temporary/cache
+HOMEBREW_LOGS=$temporary/logs
+HOMEBREW_TEMP=$temporary/tmp
+EOF
+chown -R 1000:1000 "$temporary"
 
 setpriv --reuid=1000 --regid=1000 --clear-groups env \
+  USER=linuxbrew \
+  LOGNAME=linuxbrew \
   HOME="$temporary" \
+  XDG_CACHE_HOME="$temporary/cache" \
+  XDG_CONFIG_HOME="$temporary/config" \
   HOMEBREW_CACHE="$temporary/cache" \
+  HOMEBREW_LOGS="$temporary/logs" \
   HOMEBREW_TEMP="$temporary/tmp" \
   HOMEBREW_NO_AUTO_UPDATE=1 \
   HOMEBREW_NO_INSTALL_CLEANUP=1 \

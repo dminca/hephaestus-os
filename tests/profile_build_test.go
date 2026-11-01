@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -129,6 +130,87 @@ func TestProfileBuildInstallsFdWithHomebrew(t *testing.T) {
 		if !strings.Contains(script, expected) {
 			t.Errorf("Homebrew fd installer is missing %q", expected)
 		}
+	}
+}
+
+func TestHomebrewFdBuildEnvironment(t *testing.T) {
+	for _, fail := range []bool{false, true} {
+		name := "success"
+		if fail {
+			name = "install failure"
+		}
+		t.Run(name, func(t *testing.T) {
+			root := t.TempDir()
+			prefix := filepath.Join(root, "staged")
+			link := filepath.Join(root, "home", ".linuxbrew")
+			destination := filepath.Join(root, "bin", "fd")
+			record := filepath.Join(root, "home-path")
+			commands := filepath.Join(root, "commands")
+			for _, path := range []string{filepath.Join(prefix, "bin"), filepath.Join(prefix, "opt/fd/bin"), commands} {
+				if err := os.MkdirAll(path, 0o755); err != nil {
+					t.Fatal(err)
+				}
+			}
+			write := func(path, content string) {
+				t.Helper()
+				if err := os.WriteFile(path, []byte(content), 0o755); err != nil {
+					t.Fatal(err)
+				}
+			}
+			write(filepath.Join(commands, "chown"), "#!/bin/sh\nexit 0\n")
+			write(filepath.Join(commands, "setpriv"), "#!/bin/sh\nshift 3\nexec \"$@\"\n")
+			write(filepath.Join(commands, "install"), "#!/bin/sh\nmkdir -p \"$(dirname \"$3\")\"\ncp \"$2\" \"$3\"\n")
+			write(filepath.Join(prefix, "bin/brew"), `#!/usr/bin/env bash
+set -euo pipefail
+printf '%s' "$HOME" > "$TEST_HOME_RECORD"
+[[ "$USER" == linuxbrew && "$LOGNAME" == linuxbrew ]]
+[[ "$XDG_CONFIG_HOME" == "$HOME/config" ]]
+# Model a brew.env overriding the process cache, then the user config loaded last.
+export HOMEBREW_CACHE="$TEST_UNWRITABLE_CACHE"
+source "$XDG_CONFIG_HOME/homebrew/brew.env"
+[[ "$HOMEBREW_CACHE" == "$HOME/cache" ]]
+[[ "$HOMEBREW_LOGS" == "$HOME/logs" ]]
+[[ "$HOMEBREW_TEMP" == "$HOME/tmp" ]]
+for path in "$HOMEBREW_CACHE" "$HOMEBREW_LOGS" "$HOMEBREW_TEMP"; do
+  [[ -d "$path" && -w "$path" ]]
+done
+mkdir -p "$HOMEBREW_CACHE/bootsnap"
+[[ "$1 $2" == "install fd" ]]
+[[ "$TEST_FAIL_INSTALL" != true ]] || exit 42
+`)
+			write(filepath.Join(prefix, "opt/fd/bin/fd"), "#!/bin/sh\n[ \"$1\" = --version ]\necho 'fd fixture'\n")
+			script := readFile(t, filepath.Join(repository(t), "files/scripts/install-fd.sh"))
+			script = strings.NewReplacer(
+				"/usr/share/homebrew/home/linuxbrew/.linuxbrew", prefix,
+				"/usr/libexec/hephaestus/bin/fd", destination,
+				"/home/linuxbrew", filepath.Join(root, "home"),
+			).Replace(script)
+			path := filepath.Join(root, "install-fd.sh")
+			write(path, script)
+			cmd := exec.Command("bash", path)
+			cmd.Env = append(os.Environ(),
+				"PATH="+commands+string(os.PathListSeparator)+os.Getenv("PATH"),
+				"XDG_CACHE_HOME=/home/linuxbrew/.cache",
+				"XDG_CONFIG_HOME=/root/.config",
+				"TEST_UNWRITABLE_CACHE=/home/linuxbrew/.cache/Homebrew",
+				"TEST_HOME_RECORD="+record,
+				"TEST_FAIL_INSTALL="+strconv.FormatBool(fail),
+			)
+			output, err := cmd.CombinedOutput()
+			if fail {
+				if exit, ok := err.(*exec.ExitError); !ok || exit.ExitCode() != 42 {
+					t.Fatalf("expected brew exit 42, got %v\n%s", err, output)
+				}
+			} else if err != nil || !strings.Contains(string(output), "fd fixture") {
+				t.Fatalf("fd build smoke check failed: %v\n%s", err, output)
+			}
+			home := readFile(t, record)
+			for _, path := range []string{link, home, filepath.Join(root, "home")} {
+				if _, err := os.Lstat(path); !os.IsNotExist(err) {
+					t.Errorf("build left temporary path %s: %v", path, err)
+				}
+			}
+		})
 	}
 }
 
