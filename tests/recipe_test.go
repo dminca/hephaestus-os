@@ -66,6 +66,19 @@ func TestGitCredentialHelperPackaging(t *testing.T) {
 	}
 }
 
+func TestBaseWalletToolAvailable(t *testing.T) {
+	module := readRecipeModule(t, "dnf")
+	for _, name := range []string{"kf6-kwallet", "kwalletmanager"} {
+		if slices.Contains(module.Install.Packages, name) {
+			t.Fatalf("reuse the KDE base's %s rather than installing it explicitly", name)
+		}
+	}
+	script := readFile(t, filepath.Join(repository(t), "files/scripts/install-profile.sh"))
+	if !strings.Contains(script, "kwallet-query --help >/dev/null") {
+		t.Fatal("image must check wallet tooling without opening the wallet")
+	}
+}
+
 type recipeModule struct {
 	Type    string `yaml:"type"`
 	Source  string `yaml:"source"`

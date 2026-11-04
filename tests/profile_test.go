@@ -103,6 +103,7 @@ func TestProfile(t *testing.T) {
 		}
 		for destination, origin := range map[string]string{
 			".zshrc": "zshrc", ".config/nvim": "config/nvim",
+			".tmux.conf": "config/tmux/tmux.conf", ".config/tmux": "config/tmux",
 		} {
 			got, err := filepath.EvalSymlinks(filepath.Join(home, destination))
 			if err != nil {
@@ -117,6 +118,73 @@ func TestProfile(t *testing.T) {
 				t.Fatalf("%s resolves to %q, want %q", destination, got, want)
 			}
 		}
+	})
+
+	t.Run("WalletIdentityAndFailure", func(t *testing.T) {
+		home := t.TempDir()
+		bin := t.TempDir()
+		writeFile(t, filepath.Join(bin, "kwallet-query"), `#!/bin/sh
+test "$1" = --folder && test "$2" = Hephaestus &&
+test "$3" = --read-password && test "$4" = git-identity &&
+test "$5" = -- && test "$6" = kdewallet || exit 9
+if [ "$WALLET_FAIL" = yes ]; then
+  printf 'DO-NOT-LOG-SECRET\n' >&2
+  exit 4
+fi
+if [ "$WALLET_INVALID" = yes ]; then
+  printf '%s\n' '{"name":"DO-NOT-LOG-SECRET","email":null}'
+  exit 0
+fi
+printf '%s\n' '{"name":"Demo Name","email":"demo@example.invalid"}'
+`, 0o755)
+		t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
+		t.Setenv("DBUS_SESSION_BUS_ADDRESS", "test-only")
+		for attempt := 0; attempt < 2; attempt++ {
+			if output, ok := installProfile(t, binary, home, "--git-wallet", "kdewallet"); !ok {
+				t.Fatal(output)
+			}
+		}
+		t.Setenv("WALLET_FAIL", "yes")
+		output, ok := installProfile(t, binary, home, "--replace", "--git-wallet", "kdewallet")
+		if ok || strings.Contains(output, "DO-NOT-LOG-SECRET") ||
+			!strings.Contains(output, "Wallet read failed") {
+			t.Fatalf("unsafe or missing wallet failure diagnostic: %s", output)
+		}
+		identity := filepath.Join(home, ".config/hephaestus-private/git-identity")
+		if !strings.Contains(readFile(t, identity), "demo@example.invalid") {
+			t.Fatal("failed wallet retrieval changed prior identity")
+		}
+		fresh := t.TempDir()
+		if output, ok := installProfile(t, binary, fresh, "--git-wallet", "kdewallet"); ok {
+			t.Fatalf("failed wallet activated a fresh profile: %s", output)
+		}
+		assertMissing(t, filepath.Join(fresh, ".zshrc"))
+		assertMissing(t, filepath.Join(fresh, ".gitconfig"))
+		t.Setenv("WALLET_FAIL", "")
+		t.Setenv("WALLET_INVALID", "yes")
+		output, ok = installProfile(t, binary, fresh, "--git-wallet", "kdewallet")
+		if ok || strings.Contains(output, "DO-NOT-LOG-SECRET") || !strings.Contains(output, "invalid email") {
+			t.Fatalf("unsafe invalid payload handling: %s", output)
+		}
+		assertMissing(t, filepath.Join(fresh, ".gitconfig"))
+		t.Setenv("DBUS_SESSION_BUS_ADDRESS", "")
+		if output, ok := installProfile(t, binary, fresh, "--git-wallet", "kdewallet"); ok ||
+			!strings.Contains(output, "D-Bus session bus") {
+			t.Fatalf("missing bus not rejected: %s", output)
+		}
+	})
+
+	t.Run("LegacyTmuxConflict", func(t *testing.T) {
+		home := t.TempDir()
+		writeFile(t, filepath.Join(home, ".tmux.conf"), "personal tmux\n", 0o644)
+		if output, ok := installProfile(t, binary, home); ok || !strings.Contains(output, ".tmux.conf") {
+			t.Fatalf("legacy tmux not detected: %s", output)
+		}
+		assertMissing(t, filepath.Join(home, ".zshrc"))
+		if output, ok := installProfile(t, binary, home, "--replace"); !ok {
+			t.Fatal(output)
+		}
+		assertBackup(t, filepath.Join(home, ".tmux.conf.hephaestus-backup.*"), "", "personal tmux\n")
 	})
 
 	t.Run("ConflictsDoNotPartiallyInstall", func(t *testing.T) {
@@ -137,12 +205,14 @@ func TestProfile(t *testing.T) {
 	t.Run("ReplaceBacksUpFilesAndDirectories", func(t *testing.T) {
 		home := t.TempDir()
 		writeFile(t, filepath.Join(home, ".zshrc"), "existing configuration\n", 0o644)
+		writeFile(t, filepath.Join(home, ".gitconfig"), "[alias]\n\tst = status\n", 0o644)
 		mkdir(t, filepath.Join(home, ".config/nvim"))
 		writeFile(t, filepath.Join(home, ".config/nvim/init.lua"), "-- existing editor\n", 0o644)
 		if output, ok := installProfile(t, binary, home, "--replace"); !ok {
 			t.Fatal(output)
 		}
 		assertBackup(t, filepath.Join(home, ".zshrc.hephaestus-backup.*"), "", "existing configuration\n")
+		assertBackup(t, filepath.Join(home, ".gitconfig.hephaestus-backup.*"), "", "[alias]\n\tst = status\n")
 		assertBackup(t, filepath.Join(home, ".config/nvim.hephaestus-backup.*"), "init.lua", "-- existing editor\n")
 	})
 

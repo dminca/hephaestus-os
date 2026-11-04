@@ -26,6 +26,8 @@ CGO_ENABLED=0 GOTOOLCHAIN=local go build -trimpath \
   -o "$temporary/hephaestus-profile" "$assets/installer/main.go"
 install -m755 "$temporary/hephaestus-profile" /usr/bin/hephaestus-profile
 
+kwallet-query --help >/dev/null
+
 (
   cd "$assets/build-assets"
   CGO_ENABLED=0 GO111MODULE=off GOTOOLCHAIN=local go build -trimpath \
