@@ -2,6 +2,8 @@ package tests
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -9,6 +11,73 @@ import (
 
 	"gopkg.in/yaml.v3"
 )
+
+func TestGitCredentialHelperPackaging(t *testing.T) {
+	module := readRecipeModule(t, "dnf")
+	if !slices.Contains(module.Install.Packages, "git-credential-libsecret") {
+		t.Fatal("image must install the Git Secret Service credential helper")
+	}
+	script := readFile(t, filepath.Join(repository(t), "files/scripts/install-profile.sh"))
+	start := strings.Index(script, "rpm -q git-credential-libsecret\n")
+	end := strings.Index(script, "CGO_ENABLED=0")
+	if start < 0 || end <= start {
+		t.Fatal("image build must check credential helper packaging before building the profile")
+	}
+	check := script[start:end]
+	for _, scenario := range []struct {
+		name       string
+		installed  bool
+		helper     bool
+		executable bool
+		want       bool
+	}{
+		{"installed", true, true, true, true},
+		{"missing RPM", false, true, true, false},
+		{"missing executable", true, false, false, false},
+		{"non-executable helper", true, true, false, false},
+	} {
+		t.Run(scenario.name, func(t *testing.T) {
+			directory := t.TempDir()
+			status := "0"
+			if !scenario.installed {
+				status = "1"
+			}
+			writeFile(t, filepath.Join(directory, "rpm"), "#!/bin/sh\nexit "+status+"\n", 0o755)
+			writeFile(t, filepath.Join(directory, "git"), "#!/bin/sh\nprintf '%s\\n' \"$HELPER_DIRECTORY\"\n", 0o755)
+			if scenario.helper {
+				mode := os.FileMode(0o644)
+				if scenario.executable {
+					mode = 0o755
+				}
+				writeFile(t, filepath.Join(directory, "git-credential-libsecret"),
+					"#!/bin/sh\nexit 99\n", mode)
+			}
+			command := exec.Command("bash", "-euc", check)
+			command.Env = append(os.Environ(), "PATH="+directory, "HELPER_DIRECTORY="+directory)
+			output, ok := runCommand(t, command)
+			if ok != scenario.want {
+				t.Fatalf("packaging check success=%v, want %v: %s", ok, scenario.want, output)
+			}
+			if scenario.installed && !scenario.want &&
+				!strings.Contains(output, "Git libsecret credential helper is missing or not executable") {
+				t.Fatalf("missing helper diagnostic: %s", output)
+			}
+		})
+	}
+}
+
+func TestBaseWalletToolAvailable(t *testing.T) {
+	module := readRecipeModule(t, "dnf")
+	for _, name := range []string{"kf6-kwallet", "kwalletmanager"} {
+		if slices.Contains(module.Install.Packages, name) {
+			t.Fatalf("reuse the KDE base's %s rather than installing it explicitly", name)
+		}
+	}
+	script := readFile(t, filepath.Join(repository(t), "files/scripts/install-profile.sh"))
+	if !strings.Contains(script, "kwallet-query --help >/dev/null") {
+		t.Fatal("image must check wallet tooling without opening the wallet")
+	}
+}
 
 type recipeModule struct {
 	Type    string `yaml:"type"`
