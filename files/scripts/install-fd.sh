@@ -58,7 +58,8 @@ if [[ -f "$system_config" ]]; then
   cat "$temporary/config/homebrew/brew.env" >> "$system_config"
 fi
 
-setpriv --reuid=1000 --regid=1000 --clear-groups env \
+for attempt in 1 2 3; do
+  if setpriv --reuid=1000 --regid=1000 --clear-groups env \
   USER=linuxbrew \
   LOGNAME=linuxbrew \
   HOME="$temporary" \
@@ -70,7 +71,18 @@ setpriv --reuid=1000 --regid=1000 --clear-groups env \
   HOMEBREW_NO_AUTO_UPDATE=1 \
   HOMEBREW_NO_INSTALL_CLEANUP=1 \
   HOMEBREW_NO_ANALYTICS=1 \
-  "$brew" install fd
+    "$brew" install fd; then
+    break
+  else
+    status=$?
+    if [[ "$attempt" == 3 ]]; then
+      printf 'Homebrew fd installation failed after %s attempts (exit %s).\n' "$attempt" "$status" >&2
+      exit "$status"
+    fi
+    printf 'Homebrew fd installation failed (exit %s); retrying attempt %s/3.\n' "$status" "$((attempt + 1))" >&2
+    sleep "$((attempt * 5))"
+  fi
+done
 
 if [[ ! -x "$formula" ]]; then
   echo "Homebrew installed fd but its executable is missing: $formula" >&2

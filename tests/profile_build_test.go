@@ -138,11 +138,13 @@ func TestHomebrewFdBuildEnvironment(t *testing.T) {
 		name         string
 		fail         bool
 		systemConfig bool
+		transient    bool
 	}{
-		{"success", false, false},
-		{"install failure", true, false},
-		{"success preserves system policy", false, true},
-		{"failure preserves system policy", true, true},
+		{"success", false, false, false},
+		{"install failure", true, false, false},
+		{"success preserves system policy", false, true, false},
+		{"failure preserves system policy", true, true, false},
+		{"transient metadata timeout", false, true, true},
 	} {
 		t.Run(scenario.name, func(t *testing.T) {
 			root := t.TempDir()
@@ -171,6 +173,7 @@ func TestHomebrewFdBuildEnvironment(t *testing.T) {
 				}
 			}
 			write(filepath.Join(commands, "chown"), "#!/bin/sh\nexit 0\n")
+			write(filepath.Join(commands, "sleep"), "#!/bin/sh\nexit 0\n")
 			write(filepath.Join(commands, "setpriv"), "#!/bin/sh\nshift 3\nexec \"$@\"\n")
 			write(filepath.Join(commands, "install"), "#!/bin/sh\nmkdir -p \"$(dirname \"$3\")\"\ncp \"$2\" \"$3\"\n")
 			write(filepath.Join(prefix, "bin/brew"), `#!/usr/bin/env bash
@@ -195,6 +198,11 @@ for path in "$HOMEBREW_CACHE" "$HOMEBREW_LOGS" "$HOMEBREW_TEMP"; do
 done
 mkdir -p "$HOMEBREW_CACHE/bootsnap"
 [[ "$1 $2" == "install fd" ]]
+printf 'attempt\n' >> "$TEST_ATTEMPTS"
+if [[ "$TEST_TRANSIENT" == true && $(wc -l < "$TEST_ATTEMPTS") -eq 1 ]]; then
+  echo 'metadata curl exited with 28' >&2
+  exit 1
+fi
 [[ "$TEST_FAIL_INSTALL" != true ]] || exit 42
 `)
 			write(filepath.Join(prefix, "opt/fd/bin/fd"), "#!/bin/sh\n[ \"$1\" = --version ]\necho 'fd fixture'\n")
@@ -215,6 +223,8 @@ mkdir -p "$HOMEBREW_CACHE/bootsnap"
 				"TEST_SYSTEM_CONFIG="+systemConfig,
 				"TEST_HOME_RECORD="+record,
 				"TEST_FAIL_INSTALL="+strconv.FormatBool(scenario.fail),
+				"TEST_TRANSIENT="+strconv.FormatBool(scenario.transient),
+				"TEST_ATTEMPTS="+filepath.Join(root, "attempts"),
 			)
 			output, err := cmd.CombinedOutput()
 			if scenario.fail {
@@ -223,6 +233,22 @@ mkdir -p "$HOMEBREW_CACHE/bootsnap"
 				}
 			} else if err != nil || !strings.Contains(string(output), "fd fixture") {
 				t.Fatalf("fd build smoke check failed: %v\n%s", err, output)
+			}
+			wantAttempts := 1
+			if scenario.transient {
+				wantAttempts = 2
+			}
+			if scenario.fail {
+				wantAttempts = 3
+				if !strings.Contains(string(output), "failed after 3 attempts (exit 42)") {
+					t.Fatalf("missing terminal failure diagnostic: %s", output)
+				}
+				if _, err := os.Stat(destination); !os.IsNotExist(err) {
+					t.Fatalf("failed install published fd: %v", err)
+				}
+			}
+			if got := strings.Count(readFile(t, filepath.Join(root, "attempts")), "attempt\n"); got != wantAttempts {
+				t.Fatalf("brew attempts = %d, want %d", got, wantAttempts)
 			}
 			home := readFile(t, record)
 			for _, path := range []string{link, home} {
