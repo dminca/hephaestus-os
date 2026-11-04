@@ -15,6 +15,13 @@ export CARGO_HOME="$temporary/cargo"
 export PUPPETEER_SKIP_DOWNLOAD=true
 mkdir -p "$HOME"
 
+rpm -q git-credential-libsecret
+credential_helper="$(git --exec-path)/git-credential-libsecret"
+if [[ ! -x "$credential_helper" ]]; then
+  printf 'Git libsecret credential helper is missing or not executable: %s\n' "$credential_helper" >&2
+  exit 1
+fi
+
 CGO_ENABLED=0 GOTOOLCHAIN=local go build -trimpath \
   -o "$temporary/hephaestus-profile" "$assets/installer/main.go"
 install -m755 "$temporary/hephaestus-profile" /usr/bin/hephaestus-profile

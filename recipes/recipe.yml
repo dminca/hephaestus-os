@@ -45,6 +45,7 @@ modules:
         - nix-core
         - git-lfs
         - git-delta
+        - git-credential-libsecret
         - gh
         - gcc
         - gcc-c++
