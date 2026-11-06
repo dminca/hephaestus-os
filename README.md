@@ -31,7 +31,8 @@ To rebase an existing atomic Fedora installation to the latest build:
 The published `latest` tag points to the latest successful build. The recipe
 also follows Secureblue's `latest` base, which can move to a new Fedora major.
 CI rejects a base whose Fedora major differs from the parser-validation
-container; update and validate that container deliberately when the base moves.
+container (currently `fedora:45`); update and validate that container deliberately
+when the base moves.
 
 ## Hunk
 
