@@ -1,39 +1,11 @@
 package tests
 
 import (
-	"os/exec"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
 )
-
-func TestFedoraBaseAlignment(t *testing.T) {
-	script := filepath.Join(repository(t), "files/system/usr/share/hephaestus/check-fedora-version.sh")
-	for _, scenario := range []struct {
-		name        string
-		expected    string
-		baseVersion string
-		wantSuccess bool
-	}{
-		{name: "matching release", expected: "44", baseVersion: "44.20261029.0", wantSuccess: true},
-		{name: "matching upgraded release", expected: "45", baseVersion: "45.20261105.0", wantSuccess: true},
-		{name: "new major release", expected: "44", baseVersion: "45.20261105.0"},
-		{name: "older major release", expected: "45", baseVersion: "44.20261029.0"},
-		{name: "missing version label", expected: "45", baseVersion: "null"},
-	} {
-		t.Run(scenario.name, func(t *testing.T) {
-			output, err := exec.Command("bash", script, scenario.expected, scenario.baseVersion).CombinedOutput()
-			if scenario.wantSuccess {
-				if err != nil {
-					t.Fatalf("matching Fedora release rejected: %v\n%s", err, output)
-				}
-			} else if err == nil || !strings.Contains(string(output), "differs from parser Fedora "+scenario.expected) {
-				t.Fatalf("expected release mismatch: %v\n%s", err, output)
-			}
-		})
-	}
-}
 
 func TestPythonInputMatchesCompiledLock(t *testing.T) {
 	directory := filepath.Join(repository(t), "files/system/usr/share/hephaestus/python")

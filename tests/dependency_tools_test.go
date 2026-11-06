@@ -94,7 +94,7 @@ func copyGoToolModule(t *testing.T) string {
 
 func buildGoTool(directory string) *exec.Cmd {
 	command := exec.Command("go", "build", "-mod=readonly", "-o",
-		filepath.Join(directory, "goimports"), "golang.org/x/tools/cmd/goimports")
+		directory+string(os.PathSeparator), "golang.org/x/tools/cmd/goimports", "mvdan.cc/sh/v3/cmd/shfmt")
 	command.Dir = directory
 	command.Env = append(os.Environ(), "GOTOOLCHAIN=local")
 	return command
@@ -104,7 +104,12 @@ func TestGoToolReadOnlyBuild(t *testing.T) {
 	directory := copyGoToolModule(t)
 	before := readFile(t, filepath.Join(directory, "go.sum"))
 	if output, err := buildGoTool(directory).CombinedOutput(); err != nil {
-		t.Fatalf("build locked goimports: %v\n%s", err, output)
+		t.Fatalf("build locked Go tools: %v\n%s", err, output)
+	}
+	command := exec.Command(filepath.Join(directory, "shfmt"))
+	command.Stdin = strings.NewReader("echo   hello\n")
+	if output, err := command.CombinedOutput(); err != nil || string(output) != "echo hello\n" {
+		t.Fatalf("locked shfmt failed to format shell input: %v\n%s", err, output)
 	}
 	if after := readFile(t, filepath.Join(directory, "go.sum")); before != after {
 		t.Fatal("read-only build modified go.sum")

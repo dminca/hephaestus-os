@@ -58,25 +58,28 @@ func TestProfileBuildUsesLockedTreeSitter(t *testing.T) {
 	if !strings.Contains(script, `export PATH="/usr/libexec/hephaestus/bin:$PATH"`) {
 		t.Fatal("image build must prefer pinned executables over distribution packages")
 	}
-	for name, content := range map[string]string{
-		"image build": script,
-		"parser CI":   readFile(t, filepath.Join(root, ".github/workflows/build.yml")),
-	} {
-		t.Run(name, func(t *testing.T) {
-			lookup := strings.Index(content, "expected_tree_sitter_version=$(")
-			check := strings.Index(content, `test "$(tree-sitter --version | cut -d ' ' -f 2)" = "$expected_tree_sitter_version"`)
-			parser := strings.Index(content, "nvim --headless -u NONE -l")
-			if lookup < 0 || check <= lookup || parser <= check {
-				t.Fatal("lock-derived Tree-sitter version must be checked before parser compilation")
-			}
-			line := strings.SplitN(content[lookup:], "\n", 2)[0]
-			if !strings.Contains(line, "binary-version") || !strings.Contains(line, "tree-sitter") {
-				t.Fatal("expected Tree-sitter version must come from the asset helper")
-			}
-			if name == "parser CI" && !strings.Contains(line, `--lock "$HEPHAESTUS_ASSETS/binaries.lock.json"`) {
-				t.Fatal("parser CI must read the repository binary lock")
-			}
-		})
+	lookup := strings.Index(script, "expected_tree_sitter_version=$(")
+	check := strings.Index(script, `test "$(tree-sitter --version | cut -d ' ' -f 2)" = "$expected_tree_sitter_version"`)
+	if lookup < 0 || check <= lookup || parserPosition <= check {
+		t.Fatal("lock-derived Tree-sitter version must be checked before parser compilation")
+	}
+	line := strings.SplitN(script[lookup:], "\n", 2)[0]
+	if !strings.Contains(line, "binary-version") || !strings.Contains(line, "tree-sitter") {
+		t.Fatal("expected Tree-sitter version must come from the asset helper")
+	}
+	workflow := readFile(t, filepath.Join(root, ".github/workflows/build.yml"))
+	if strings.Contains(workflow, "container: fedora:") || strings.Contains(workflow, "build-parsers.lua") {
+		t.Fatal("parser compilation must run only in the actual image build")
+	}
+}
+
+func TestProfileBuildInstallsLockedShfmt(t *testing.T) {
+	if slices.Contains(readRecipeModule(t, "dnf").Install.Packages, "shfmt") {
+		t.Fatal("shfmt must not depend on Fedora RPM availability")
+	}
+	script := readFile(t, filepath.Join(repository(t), "files/scripts/install-profile.sh"))
+	if !strings.Contains(script, "mvdan.cc/sh/v3/cmd/shfmt") || !strings.Contains(script, "shfmt --version") {
+		t.Fatal("image build must compile and check locked shfmt")
 	}
 }
 

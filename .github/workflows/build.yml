@@ -122,47 +122,9 @@ jobs:
           PUPPETEER_SKIP_DOWNLOAD: "true"
         run: cd files/system/usr/share/hephaestus/node && npm ci --omit=dev --no-audit --no-fund
 
-  parsers:
-    name: Build and load every Treesitter parser
-    needs: [tests, dependencies, node-runtimes]
-    runs-on: ubuntu-latest
-    container: fedora:45
-    permissions:
-      contents: read
-    steps:
-      - name: Install native parser build dependencies
-        run: dnf install -y git golang neovim gcc gcc-c++ nodejs24 nodejs24-npm curl-minimal tar gzip unzip xz skopeo jq
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - name: Verify rolling base matches parser validation
-        run: |
-          source /etc/os-release
-          expected="$VERSION_ID"
-          base_version=$(skopeo inspect docker://ghcr.io/secureblue/kinoite-main-hardened:latest | jq -r '.Labels["org.opencontainers.image.version"]')
-          bash files/system/usr/share/hephaestus/check-fedora-version.sh "$expected" "$base_version"
-      - name: Install and check native editor tools
-        env:
-          PUPPETEER_SKIP_DOWNLOAD: "true"
-        run: |
-          cd files/system/usr/share/hephaestus/node
-          npm ci --omit=dev --no-audit --no-fund
-          node --test "$GITHUB_WORKSPACE/tests/dependencies/editor-tools.test.cjs"
-      - name: Check Neovim build validation
-        run: go test -count=1 ./tests -run 'TestParserBuildReportsCompleteFailures|TestLanguageServerBuildValidation' -v
-      - name: Fetch pinned tools and compile all configured parsers
-        shell: bash
-        run: |
-          set -euo pipefail
-          export HEPHAESTUS_ASSETS="$GITHUB_WORKSPACE/files/system/usr/share/hephaestus"
-          export PATH="/usr/libexec/hephaestus/bin:$PATH"
-          go run ./files/system/usr/share/hephaestus/build-assets sources --lock "$HEPHAESTUS_ASSETS/sources.lock.json" --destination "$HEPHAESTUS_ASSETS/nvim/plugins"
-          go run ./files/system/usr/share/hephaestus/build-assets binaries --lock "$HEPHAESTUS_ASSETS/binaries.lock.json"
-          expected_tree_sitter_version=$(go run ./files/system/usr/share/hephaestus/build-assets binary-version --lock "$HEPHAESTUS_ASSETS/binaries.lock.json" tree-sitter)
-          test "$(tree-sitter --version | cut -d ' ' -f 2)" = "$expected_tree_sitter_version"
-          nvim --headless -u NONE -l "$HEPHAESTUS_ASSETS/build-parsers.lua"
-
   bluebuild:
     name: Build Custom Image
-    needs: [tests, parsers]
+    needs: [tests, dependencies, node-runtimes]
     runs-on: ubuntu-latest
     permissions:
       contents: read

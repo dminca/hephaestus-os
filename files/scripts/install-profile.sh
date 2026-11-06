@@ -84,8 +84,10 @@ nvim --headless -u NONE -l "$assets/build-parsers.lua"
 (
   cd "$assets/go-tools"
   GOTOOLCHAIN=local go build -mod=readonly -trimpath \
-    -o /usr/libexec/hephaestus/bin/goimports golang.org/x/tools/cmd/goimports
+    -o /usr/libexec/hephaestus/bin/ \
+    golang.org/x/tools/cmd/goimports mvdan.cc/sh/v3/cmd/shfmt
 )
+shfmt --version
 bash "$assets/python/install.sh" /usr/libexec/hephaestus/python
 ln -s /usr/libexec/hephaestus/python/bin/yamlfix /usr/libexec/hephaestus/bin/yamlfix
 

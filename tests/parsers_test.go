@@ -11,12 +11,12 @@ import (
 func TestParserBuildReportsCompleteFailures(t *testing.T) {
 	nvim, err := exec.LookPath("nvim")
 	if err != nil {
-		t.Skip("Neovim is required; the Fedora parser CI job runs these checks")
+		t.Skip("Neovim is required for parser failure fixtures")
 	}
 	versionCheck := exec.Command(nvim, "--headless", "-u", "NONE",
 		"+lua if vim.fn.has('nvim-0.11') == 0 then vim.cmd('cquit') end", "+qa!")
 	if err := versionCheck.Run(); err != nil {
-		t.Skip("Neovim 0.11 or newer is required; the Fedora parser CI job runs these checks")
+		t.Skip("Neovim 0.11 or newer is required for parser failure fixtures")
 	}
 	script := filepath.Join(repository(t), "files/system/usr/share/hephaestus/build-parsers.lua")
 	fixtures := []struct {

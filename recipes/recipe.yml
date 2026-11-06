@@ -64,7 +64,6 @@ modules:
         - rust-analyzer
         - ruff
         - ShellCheck
-        - shfmt
         - libxml2
         - ImageMagick
         - ghostscript
