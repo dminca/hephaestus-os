@@ -8,7 +8,7 @@ description: Secureblue Kinoite with personal workstation customizations.
 # the base image to build on top of (FROM) and the version tag to use
 base-image: ghcr.io/secureblue/kinoite-main-hardened
 image-version: latest # You can pin to a specific version of Fedora as well
-blue-build-tag: v0.9.37
+blue-build-tag: v0.9.41
 nushell-version: 0.113.1@sha256:11610351f920a8284a0b60032e9d9e3d26d1fe273f431d30835306c18aa32ddb
 platforms:
   - linux/amd64
