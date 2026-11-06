@@ -93,7 +93,6 @@ commit both together. Image builds consume locks; they must not repair them.
 |---|---|---|
 | Editor npm tools | `files/system/usr/share/hephaestus/node/package.json` | Adjacent `package-lock.json` |
 | Renovate itself | `.github/renovate/package.json` | Adjacent `package-lock.json` |
-| Python yamlfix | `files/system/usr/share/hephaestus/python/requirements.in` | Adjacent hash-pinned `requirements.txt` |
 | Go goimports/shfmt | `files/system/usr/share/hephaestus/go-tools/go.mod` | Adjacent `go.sum`; Go `tool` directives |
 | Rust nil/statix | Full Git revisions in `files/scripts/install-profile.sh` | Upstream Cargo locks, enforced with `--locked` |
 | `fd` | `files/scripts/install-fd.sh` and the pinned BlueBuild Brew module | Installed from Homebrew during image build, smoke-checked, and copied into `/usr/libexec/hephaestus/bin` |
@@ -140,23 +139,9 @@ that list. Also wire its consumer, such as Neovim's `languages.lua`, and verify
 its real startup behavior. For Renovate, use the same commands in
 `.github/renovate` instead; never add Renovate to the editor bundle.
 
-For Python, use the Python minor in `python/.python-version` and the lock
-compiler version in `.github/python-tools.txt`:
-
-```bash
-pip install -r .github/python-tools.txt
-cd files/system/usr/share/hephaestus/python
-pip-compile --generate-hashes --allow-unsafe --strip-extras --no-emit-index-url --output-file=requirements.txt requirements.in
-bash install.sh /tmp/hephaestus-python-check
-```
-
-Choose a fresh destination for the check environment. The installer rejects
-another Python minor and installs only hash-pinned requirements. Renovate's
-`pip-compile` manager maintains the source and output together.
-The compiler environment also pins Click 8.4.2: pip-tools 7.6.1 misserializes
-Click 8.5 flag defaults as a spurious `--no-index` in the generated header.
-Renovate holds that compiler-only dependency below 8.5 until pip-tools supports
-the new defaults. This does not constrain Click in the installed yamlfix graph.
+YAML formatting uses the bundled YAML language server, already enabled in
+Neovim. No separate Python formatter environment is installed; Fedora's Python
+runtime can roll forward without a formatter-specific minor-version lock.
 
 For Go tools, use a local compiler satisfying the tool module's `go` directive:
 
@@ -167,7 +152,7 @@ GOTOOLCHAIN=local go mod tidy
 GOTOOLCHAIN=local go build -mod=readonly -o /tmp/goimports golang.org/x/tools/cmd/goimports
 ```
 
-Native Renovate managers own npm, Python, and Go metadata. Custom managers cover
+Native Renovate managers own npm and Go metadata. Custom managers cover
 plugin commits, binary releases, Rust revisions, Flow Desktop, and BlueBuild
 pins. Extend the appropriate manager when adding a new dependency surface.
 Never bypass incompatibilities with `--force` or `--legacy-peer-deps`.
@@ -183,8 +168,7 @@ Renovate's `git-refs` digest lookup and cannot resolve the default branch.
 | Manifest/lock synchronization, peer conflicts, runtime minima | `tests/dependencies/npm-install.test.cjs` |
 | Real Renovate rule resolution, extraction, artifact failure status | `tests/dependencies/renovate-policy.test.cjs` |
 | Editor executable presence and startup | `tests/dependencies/editor-tools.test.cjs` |
-| Python/Go/Rust installation and rejection paths | `tests/dependency_tools_test.go` (integration build tag) |
-| Fedora alignment and Python source/lock agreement | `tests/dependency_policy_test.go` |
+| Go/Rust installation and rejection paths | `tests/dependency_tools_test.go` (integration build tag) |
 | Binary/source catalogs and lock generators | Existing `tests/lock_tools_test.go`, `tools/lock-*/main_test.go`, and asset-helper tests |
 
 Use plain JavaScript with Node's built-in runner for npm/Renovate behavior and
@@ -196,17 +180,16 @@ network failures must not count as successful rejection tests.
 ```bash
 go test -count=1 ./...
 node --test tests/renovate-config.test.cjs tests/dependencies/*.test.cjs
-go test -count=1 -tags=integration ./tests -run 'TestPython|TestGoTool|TestRust' -v
+go test -count=1 -tags=integration ./tests -run 'TestGoTool|TestRust' -v
 .github/renovate/node_modules/.bin/renovate-config-validator --strict renovate.json5
 ```
 
-Install both locked npm projects first. Integration tests require the target
-Python, the compiler dependencies in `.github/python-tools.txt`, a local Go
-compiler, and Cargo/rustc; they intentionally fail rather than
+Install both locked npm projects first. Integration tests require a local Go
+compiler and Cargo/rustc; they intentionally fail rather than
 skip when prerequisites are missing. Root Go tests do not traverse the nested
 tool module. CI runs native tool installation separately and checks actual Node
-runtime boundaries before parser/image builds. The Fedora job checks Linux
-editor executables; the final image still compiles parsers and validates Neovim
+runtime boundaries before image builds. CI checks editor executables;
+the final image compiles parsers and validates Neovim
 language servers. Keep these jobs blocking when configuring branch protection.
 
 Fedora RPMs, Secureblue's base, and Flatpaks intentionally receive rolling

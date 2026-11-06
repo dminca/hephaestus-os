@@ -88,8 +88,6 @@ nvim --headless -u NONE -l "$assets/build-parsers.lua"
     golang.org/x/tools/cmd/goimports mvdan.cc/sh/v3/cmd/shfmt
 )
 shfmt --version
-bash "$assets/python/install.sh" /usr/libexec/hephaestus/python
-ln -s /usr/libexec/hephaestus/python/bin/yamlfix /usr/libexec/hephaestus/bin/yamlfix
 
 install -Dm644 "$plugins/bat/themes/Catppuccin Mocha.tmTheme" \
   "$assets/profile/config/bat/themes/CatppuccinMocha.tmTheme"

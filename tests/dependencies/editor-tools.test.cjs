@@ -1,14 +1,36 @@
 const assert = require("node:assert/strict");
-const { chmodSync, mkdtempSync, rmSync, writeFileSync } = require("node:fs");
+const { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } = require("node:fs");
 const { tmpdir } = require("node:os");
 const path = require("node:path");
+const { pathToFileURL } = require("node:url");
 const { test } = require("node:test");
-const { assets, run } = require("./helpers.cjs");
+const { root, assets, run } = require("./helpers.cjs");
 const { checkTools, executables } = require(path.join(assets, "node/check-tools.cjs"));
 const bin = path.join(assets, "node/node_modules/.bin");
 
 test("all bundled editor executables are present and executable", () => {
   checkTools(bin);
+});
+
+test("bundled YAML server formats YAML without a Python formatter", async () => {
+  const { YAMLFormatter } = await import(pathToFileURL(path.join(
+    assets, "node/node_modules/yaml-language-server/out/src/languageservice/services/yamlFormatter.js",
+  )));
+  const formatter = new YAMLFormatter();
+  formatter.configure({ format: true });
+  const text = "items: [one,two]\n";
+  const edits = await formatter.format({
+    getText: () => text,
+    positionAt: () => ({ line: 1, character: 0 }),
+  }, { tabSize: 2 });
+  assert.equal(edits.length, 1);
+  assert.equal(edits[0].newText, "items: [one, two]\n");
+  const plugins = readFileSync(path.join(assets, "profile/config/nvim/lua/hephaestus/plugins.lua"), "utf8");
+  const languages = readFileSync(path.join(assets, "profile/config/nvim/lua/hephaestus/languages.lua"), "utf8");
+  const installer = readFileSync(path.join(root, "files/scripts/install-profile.sh"), "utf8");
+  assert.match(plugins, /lsp_format = "prefer"/);
+  assert.match(languages, /yamlls =[\s\S]*format = \{ enable = true \}/);
+  assert.doesNotMatch(plugins + installer, /yamlfix|python\/install\.sh/);
 });
 
 for (const name of ["tsc", "typescript-language-server", "biome", "pyright"]) {

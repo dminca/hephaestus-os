@@ -49,13 +49,6 @@ jobs:
         with:
           go-version-file: files/system/usr/share/hephaestus/go-tools/go.mod
 
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
-        with:
-          python-version-file: files/system/usr/share/hephaestus/python/.python-version
-
-      - name: Install Python lock compiler
-        run: pip install -r .github/python-tools.txt
-
       - name: Install minisign for Flow release verification
         run: |
           sudo apt-get update

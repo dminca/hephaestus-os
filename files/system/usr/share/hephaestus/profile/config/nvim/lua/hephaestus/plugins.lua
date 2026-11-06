@@ -137,7 +137,7 @@ return {
     default_format_opts = { lsp_format = "prefer" },
     formatters_by_ft = {
       ["_"] = { "squeeze_blanks", "trim_whitespace", "trim_newlines" },
-      xml = { "xmllint" }, yaml = { "yamlfix" }, json = { "fixjson" }, go = { "goimports" },
+      xml = { "xmllint" }, json = { "fixjson" }, go = { "goimports" },
       lua = { "stylua" }, nix = { "nixfmt" }, terraform = { "tofu_fmt" },
       sh = { "shellcheck", "shellharden", "shfmt" }, bash = { "shellcheck", "shellharden", "shfmt" },
       zsh = { "shellcheck", "shellharden", "shfmt" }, toml = { "taplo" }, typst = { "typstyle" },

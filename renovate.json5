@@ -1,13 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
-  "enabledManagers": ["npm", "gomod", "pip-compile", "pip_requirements", "github-actions", "custom.regex"],
-  "pip-compile": {
-    "managerFilePatterns": ["/^files/system/usr/share/hephaestus/python/requirements\\.txt$/"]
-  },
-  "pip_requirements": {
-    "managerFilePatterns": ["/^\\.github/python-tools\\.txt$/"]
-  },
+  "enabledManagers": ["npm", "gomod", "github-actions", "custom.regex"],
   "schedule": ["before 7am on Monday"],
   "timezone": "UTC",
   "dependencyDashboard": true,
@@ -193,17 +187,6 @@
       "matchManagers": ["npm"],
       "matchPackageNames": ["typescript"],
       "allowedVersions": "<7"
-    },
-    {
-      "matchManagers": ["pip-compile", "pip_requirements"],
-      "groupName": "Python tools"
-    },
-    {
-      "description": "pip-tools 7.6.1 needs pre-8.5 Click flag defaults for stable lock headers",
-      "matchManagers": ["pip_requirements"],
-      "matchFileNames": [".github/python-tools.txt"],
-      "matchPackageNames": ["click"],
-      "allowedVersions": "<8.5"
     },
     {
       "matchPackageNames": ["oxalica/nil", "nerdypepper/statix"],

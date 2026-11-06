@@ -53,15 +53,6 @@ jobs:
           node --test tests/renovate-config.test.cjs tests/dependencies/node-runtime.test.cjs tests/dependencies/npm-install.test.cjs tests/dependencies/renovate-policy.test.cjs tests/dependencies/editor-tools.test.cjs
           .github/renovate/node_modules/.bin/renovate-config-validator --strict renovate.json5
           git diff --exit-code -- '**/package*.json'
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
-        with:
-          python-version-file: files/system/usr/share/hephaestus/python/.python-version
-      - name: Validate Python hashes and lock synchronization
-        run: |
-          pip install -r .github/python-tools.txt
-          cd files/system/usr/share/hephaestus/python
-          pip-compile --generate-hashes --allow-unsafe --strip-extras --no-emit-index-url --output-file=requirements.txt requirements.in
-          git diff --exit-code -- requirements.txt
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:
           go-version-file: files/system/usr/share/hephaestus/go-tools/go.mod
@@ -69,7 +60,7 @@ jobs:
         run: |
           cargo --version
           rustc --version
-          go test -count=1 -tags=integration ./tests -run 'TestPython|TestGoTool|TestRust' -v
+          go test -count=1 -tags=integration ./tests -run 'TestGoTool|TestRust' -v
 
   node-runtimes:
     name: Check Node ${{ matrix.node }} / npm ${{ matrix.npm }}
