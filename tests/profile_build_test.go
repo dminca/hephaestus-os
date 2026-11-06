@@ -32,40 +32,22 @@ func TestNoRepositoryPythonScripts(t *testing.T) {
 	}
 }
 
-func TestProfileBuildUsesLockedTreeSitter(t *testing.T) {
+func TestProfileBuildDoesNotInstallEditorDependencies(t *testing.T) {
 	root := repository(t)
 	script := readFile(t, filepath.Join(root, "files/scripts/install-profile.sh"))
-	if strings.Contains(script, "cargo install --locked tree-sitter-cli") {
-		t.Fatal("build still depends on the unavailable crates.io release")
-	}
-	if strings.Contains(script, ".py") {
-		t.Fatal("profile build still invokes a repository Python script")
-	}
 	buildPosition := strings.Index(script, `-o "$temporary/hephaestus-assets" .`)
 	sourcesPosition := strings.Index(script, `"$temporary/hephaestus-assets" sources`)
 	installPosition := strings.Index(script, `"$temporary/hephaestus-assets" binaries`)
-	versionPosition := strings.Index(script, "tree-sitter --version")
-	parserPosition := strings.Index(script, `nvim --headless -u NONE -l "$assets/build-parsers.lua"`)
-	if installPosition < 0 || versionPosition < 0 || parserPosition < 0 {
-		t.Fatal("binary installation, version check or parser build is missing")
-	}
-	if installPosition >= versionPosition || versionPosition >= parserPosition {
-		t.Fatal("locked Tree-sitter must be installed and checked before building parsers")
-	}
 	if buildPosition < 0 || sourcesPosition <= buildPosition || installPosition <= sourcesPosition {
 		t.Fatal("Go asset installer must be built before fetching sources and binaries")
 	}
 	if !strings.Contains(script, `export PATH="/usr/libexec/hephaestus/bin:$PATH"`) {
 		t.Fatal("image build must prefer pinned executables over distribution packages")
 	}
-	lookup := strings.Index(script, "expected_tree_sitter_version=$(")
-	check := strings.Index(script, `test "$(tree-sitter --version | cut -d ' ' -f 2)" = "$expected_tree_sitter_version"`)
-	if lookup < 0 || check <= lookup || parserPosition <= check {
-		t.Fatal("lock-derived Tree-sitter version must be checked before parser compilation")
-	}
-	line := strings.SplitN(script[lookup:], "\n", 2)[0]
-	if !strings.Contains(line, "binary-version") || !strings.Contains(line, "tree-sitter") {
-		t.Fatal("expected Tree-sitter version must come from the asset helper")
+	for _, obsolete := range []string{"build-parsers.lua", "cargo install", "cargo build", "go-tools", "check-language-servers.lua"} {
+		if strings.Contains(script, obsolete) {
+			t.Fatalf("image still provisions editor dependency: %s", obsolete)
+		}
 	}
 	workflow := readFile(t, filepath.Join(root, ".github/workflows/build.yml"))
 	if strings.Contains(workflow, "container: fedora:") || strings.Contains(workflow, "build-parsers.lua") {
@@ -73,13 +55,17 @@ func TestProfileBuildUsesLockedTreeSitter(t *testing.T) {
 	}
 }
 
-func TestProfileBuildInstallsLockedShfmt(t *testing.T) {
+func TestProfileBuildUsesUserShfmt(t *testing.T) {
 	if slices.Contains(readRecipeModule(t, "dnf").Install.Packages, "shfmt") {
 		t.Fatal("shfmt must not depend on Fedora RPM availability")
 	}
 	script := readFile(t, filepath.Join(repository(t), "files/scripts/install-profile.sh"))
-	if !strings.Contains(script, "mvdan.cc/sh/v3/cmd/shfmt") || !strings.Contains(script, "shfmt --version") {
-		t.Fatal("image build must compile and check locked shfmt")
+	if strings.Contains(script, "mvdan.cc/sh/v3/cmd/shfmt") {
+		t.Fatal("shfmt belongs to the user-time tool installer")
+	}
+	plugins := readFile(t, filepath.Join(repository(t), "files/system/usr/share/hephaestus/profile/config/nvim/lua/hephaestus/plugins.lua"))
+	if !strings.Contains(plugins, `"shfmt"`) || !strings.Contains(plugins, "mason-tool-installer.nvim") {
+		t.Fatal("shfmt must be managed by Mason")
 	}
 }
 
@@ -292,10 +278,9 @@ func TestProfilesUseIsolatedExecutables(t *testing.T) {
 		t.Fatal("JSONC filetype must use the JSON parser")
 	}
 	plugins := readFile(t, filepath.Join(profile, "config/nvim/lua/hephaestus/plugins.lua"))
-	for _, name := range []string{"tinymist", "websocat"} {
-		if !strings.Contains(plugins, `"/usr/libexec/hephaestus/bin/`+name+`"`) {
-			t.Fatalf("Typst preview must use isolated %s", name)
-		}
+	if strings.Contains(plugins, `executable_path = "/usr/libexec/hephaestus/cord"`) ||
+		strings.Contains(plugins, `tinymist = "/usr/libexec/`) {
+		t.Fatal("editor helpers must not require image-built binaries")
 	}
 
 }

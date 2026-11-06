@@ -35,21 +35,6 @@ case "$command" in
 esac
 `
 
-const reviewedBatRevision = "6810349b28055dce54076712fc05fc68da4b8ec0"
-
-type sourcePinFixture struct {
-	Revision string `json:"revision"`
-	URL      string `json:"url"`
-	SHA256   string `json:"sha256"`
-}
-
-type lazyPluginPinFixture struct {
-	Branch     string `json:"branch"`
-	Commit     string `json:"commit"`
-	Repository string `json:"repository"`
-	Type       string `json:"type"`
-}
-
 type binaryLockFixture struct {
 	Architecture string `json:"architecture"`
 	Artifacts    []struct {
@@ -89,52 +74,6 @@ func writeJSON(t *testing.T, path string, value any) {
 	writeFile(t, path, string(content)+"\n", 0o644)
 }
 
-func prepareProfileLock(t *testing.T, assets, api, scenario, checksum string) string {
-	t.Helper()
-	config := filepath.Join(assets, "profile/config/nvim/lua/hephaestus/plugins.lua")
-	mkdir(t, filepath.Dir(config))
-	writeFile(t, config, `{ "example/plugin" }`, 0o644)
-	revision := strings.Repeat("a", 40)
-	nextRevision := strings.Repeat("b", 40)
-	sources := map[string]sourcePinFixture{
-		"folke/lazy.nvim": {Revision: revision, URL: "https://example.org/lazy", SHA256: checksum},
-		"catppuccin/bat":  {Revision: reviewedBatRevision, URL: "https://example.org/bat", SHA256: checksum},
-	}
-	pluginCommit := revision
-	switch scenario {
-	case "ReusesExistingPins":
-		sources["example/plugin"] = sourcePinFixture{
-			Revision: revision, URL: "https://example.org/plugin", SHA256: checksum,
-		}
-	case "UpdatesBranchDigest":
-		sources["example/plugin"] = sourcePinFixture{
-			Revision: revision, URL: "https://example.org/plugin", SHA256: checksum,
-		}
-		pluginCommit = nextRevision
-	case "InvalidCommit":
-		pluginCommit = "not-a-commit"
-	}
-	path := filepath.Join(assets, "sources.lock.json")
-	writeJSON(t, path, map[string]any{
-		"nix_config_revision": "5ea74ed40e60c520daae0a94cc50e05857abcb63",
-		"sources":             sources,
-	})
-	mkdir(t, filepath.Join(assets, "nvim"))
-	writeJSON(t, filepath.Join(assets, "nvim/lazy-lock.json"), map[string]lazyPluginPinFixture{
-		"lazy.nvim": {
-			Branch: "stable", Commit: revision, Repository: "folke/lazy.nvim", Type: "branch",
-		},
-		"catppuccin-bat": {
-			Branch: reviewedBatRevision, Commit: reviewedBatRevision,
-			Repository: "catppuccin/bat", Type: "held",
-		},
-		"plugin": {
-			Branch: "HEAD", Commit: pluginCommit, Repository: "example/plugin", Type: "branch",
-		},
-	})
-	return path
-}
-
 func prepareBinaryLock(t *testing.T, assets, api, scenario, checksum string) string {
 	t.Helper()
 	path := filepath.Join(assets, "binaries.lock.json")
@@ -171,7 +110,7 @@ func prepareBinaryLock(t *testing.T, assets, api, scenario, checksum string) str
 }
 
 func TestLockTools(t *testing.T) {
-	for _, tool := range []string{"lock-profile", "lock-binaries"} {
+	for _, tool := range []string{"lock-binaries"} {
 		t.Run(tool, func(t *testing.T) {
 			binary := filepath.Join(t.TempDir(), tool)
 			build := exec.Command("go", "build", "-o", binary, "./tools/"+tool)
@@ -183,20 +122,12 @@ func TestLockTools(t *testing.T) {
 				{name: "Success"},
 				{name: "DownloadFailure", expectedError: "Download failed"},
 			}
-			if tool == "lock-profile" {
-				scenarios = append(scenarios,
-					lockScenario{name: "ReusesExistingPins"},
-					lockScenario{name: "InvalidCommit", expectedError: "invalid commit"},
-					lockScenario{name: "UpdatesBranchDigest"},
-				)
-			} else {
-				scenarios = append(scenarios,
-					lockScenario{name: "ChecksumMismatch", expectedError: "publisher checksum mismatch"},
-					lockScenario{name: "MissingAsset", expectedError: "missing asset"},
-					lockScenario{name: "NoPublisherDigest"},
-					lockScenario{name: "UpdatesOneArtifact"},
-				)
-			}
+			scenarios = append(scenarios,
+				lockScenario{name: "ChecksumMismatch", expectedError: "publisher checksum mismatch"},
+				lockScenario{name: "MissingAsset", expectedError: "missing asset"},
+				lockScenario{name: "NoPublisherDigest"},
+				lockScenario{name: "UpdatesOneArtifact"},
+			)
 			for _, scenario := range scenarios {
 				t.Run(scenario.name, func(t *testing.T) {
 					checkLockScenario(t, binary, tool, scenario)
@@ -223,12 +154,7 @@ func checkLockScenario(t *testing.T, binary, tool string, scenario lockScenario)
 	}
 	api := filepath.Join(root, "api")
 	checksum := fmt.Sprintf("%x", sha256.Sum256([]byte("archive fixture")))
-	var lockPath string
-	if tool == "lock-profile" {
-		lockPath = prepareProfileLock(t, assets, api, scenario.name, checksum)
-	} else {
-		lockPath = prepareBinaryLock(t, assets, api, scenario.name, checksum)
-	}
+	lockPath := prepareBinaryLock(t, assets, api, scenario.name, checksum)
 	original := readFile(t, lockPath)
 	log := filepath.Join(root, "calls")
 	writeFile(t, log, "", 0o644)
@@ -265,17 +191,7 @@ func checkLockScenario(t *testing.T, binary, tool string, scenario lockScenario)
 	if !strings.Contains(content, checksum) {
 		t.Fatal("generated lock is missing the archive checksum")
 	}
-	if tool == "lock-profile" {
-		var actual struct {
-			NixConfigRevision string `json:"nix_config_revision"`
-		}
-		if err := json.Unmarshal([]byte(content), &actual); err != nil {
-			t.Fatal(err)
-		}
-		if actual.NixConfigRevision != "5ea74ed40e60c520daae0a94cc50e05857abcb63" {
-			t.Fatal("source revision changed")
-		}
-	} else {
+	{
 		expected := committedBinaryLock(t)
 		updatedCount := len(expected.Artifacts)
 		if scenario.name == "UpdatesOneArtifact" {
@@ -303,8 +219,5 @@ func checkLockScenario(t *testing.T, binary, tool string, scenario lockScenario)
 		if !witrPinned {
 			t.Fatal("witr artifact pin is missing")
 		}
-	}
-	if scenario.name == "ReusesExistingPins" && readFile(t, log) != "" {
-		t.Fatal("existing reviewed pins caused network calls")
 	}
 }

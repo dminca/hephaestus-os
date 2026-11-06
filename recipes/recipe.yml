@@ -59,10 +59,6 @@ modules:
         - nodejs24
         - nodejs24-npm
         - python3
-        - gopls
-        - rust-analyzer
-        - ruff
-        - ShellCheck
         - libxml2
         - ImageMagick
         - ghostscript
@@ -88,13 +84,10 @@ modules:
       - scope: system
         notify: true
         repo:
-          name: flathub
+          name: flathub-verified
+          title: Flathub Verified
         install:
           - com.nextcloud.desktopclient.nextcloud
-      - scope: user
-        notify: true
-        repo:
-          name: flathub
 
   - type: signing # this sets up the proper policy & signing files for signed images to work fully
     source: ghcr.io/blue-build/modules/signing:latest@sha256:6227e5ac294e9b60a77836775700df879d8a39b184ca3e511edf73cc58f1f4a6

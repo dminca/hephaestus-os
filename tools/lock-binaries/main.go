@@ -29,71 +29,9 @@ var artifacts = []artifactSpec{
 		binaries: []string{"cue"}, license: "Apache-2.0",
 	},
 	{
-		repository: "artempyanykh/marksman", version: "2026-02-08",
-		filename: "marksman-linux-x64",
-		binaries: []string{"marksman"}, license: "MIT",
-	},
-	{
-		repository: "Feel-ix-343/markdown-oxide", version: "v0.25.12",
-		filename: "markdown-oxide-{version}-x86_64-unknown-linux-gnu",
-		binaries: []string{"markdown-oxide"}, license: "Apache-2.0",
-	},
-	{
-		repository: "opentofu/tofu-ls", version: "v0.5.3",
-		filename: "tofu-ls_Linux_x86_64.tar.gz",
-		binaries: []string{"tofu-ls"}, license: "MPL-2.0",
-	},
-	{
-		repository: "LuaLS/lua-language-server", version: "3.19.2",
-		filename: "lua-language-server-{version}-linux-x64.tar.gz",
-		binaries: []string{"lua-language-server"}, license: "MIT",
-		bundle: "lua-language-server",
-	},
-	{
-		repository: "haskell/haskell-language-server", version: "2.15.0.0",
-		filename: "haskell-language-server-{version}-x86_64-linux-fedora40.tar.xz",
-		binaries: []string{"haskell-language-server-wrapper"}, license: "Apache-2.0",
-		bundle: "haskell-language-server", stripRoot: true,
-	},
-	{
-		repository: "tree-sitter/tree-sitter", version: "v0.27.1",
-		filename: "tree-sitter-linux-x64.gz",
-		binaries: []string{"tree-sitter"}, license: "MIT",
-	},
-	{
 		repository: "sxyazi/yazi", version: "v26.9.1",
 		filename: "yazi-x86_64-unknown-linux-musl.zip",
 		binaries: []string{"yazi", "ya"}, license: "MIT",
-	},
-	{
-		repository: "JohnnyMorganz/StyLua", version: "v2.6.0",
-		filename: "stylua-linux-x86_64-musl.zip",
-		binaries: []string{"stylua"}, license: "MPL-2.0",
-	},
-	{
-		repository: "anordal/shellharden", version: "v4.3.2",
-		filename: "shellharden-x86_64-unknown-linux-musl.tar.gz",
-		binaries: []string{"shellharden"}, license: "MPL-2.0",
-	},
-	{
-		repository: "tamasfe/taplo", version: "0.10.0",
-		filename: "taplo-linux-x86_64.gz",
-		binaries: []string{"taplo"}, license: "MIT",
-	},
-	{
-		repository: "tekumara/typos-lsp", version: "v0.1.57",
-		filename: "typos-lsp-{version}-x86_64-unknown-linux-musl.tar.gz",
-		binaries: []string{"typos-lsp"}, license: "MIT",
-	},
-	{
-		repository: "Myriad-Dreamin/tinymist", version: "v0.15.10",
-		filename: "tinymist-x86_64-unknown-linux-musl.tar.gz",
-		binaries: []string{"tinymist"}, license: "Apache-2.0",
-	},
-	{
-		repository: "typstyle-rs/typstyle", version: "v0.15.2",
-		filename: "typstyle-x86_64-unknown-linux-musl",
-		binaries: []string{"typstyle"}, license: "Apache-2.0",
 	},
 	{
 		repository: "vi/websocat", version: "v1.14.1",
