@@ -2,11 +2,7 @@ const { accessSync, constants } = require("node:fs");
 const path = require("node:path");
 
 const executables = [
-  "bash-language-server", "typescript-language-server", "tsserver", "tsc",
-  "vscode-css-language-server", "vscode-eslint-language-server",
-  "vscode-html-language-server", "vscode-json-language-server",
-  "tailwindcss-language-server", "svelteserver", "yaml-language-server",
-  "emmet-ls", "biome", "pyright", "pyright-langserver", "fixjson",
+  "mmdc",
 ];
 
 function checkTools(directory) {

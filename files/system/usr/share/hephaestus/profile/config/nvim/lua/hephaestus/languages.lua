@@ -18,35 +18,13 @@ local servers = {
     kubernetesCRDStore = { enable = true }, schemas = { kubernetes = "/*.yaml" },
   } } },
 }
-local missing = {}
--- These upstream cmd functions prefer project-local tools, then fall back to PATH.
-local node_commands = {
-  ts_ls = "typescript-language-server", tailwindcss = "tailwindcss-language-server",
-  jsonls = "vscode-json-language-server", html = "vscode-html-language-server",
-  eslint = "vscode-eslint-language-server", cssls = "vscode-css-language-server",
-  biome = "biome", yamlls = "yaml-language-server", svelte = "svelteserver",
-}
-local required_commands = {}
 for name, config in pairs(servers) do
   config.capabilities = require("blink.cmp").get_lsp_capabilities()
   vim.lsp.config(name, config)
-  local command = vim.lsp.config[name].cmd
-  local executable = type(command) == "table" and command[1] or node_commands[name]
-  assert(type(executable) == "string", "Cannot resolve language server command: " .. name)
-  required_commands[name] = executable
-  if vim.fn.executable(executable) == 0 then
-    table.insert(missing, name .. " (" .. executable .. ")")
-  else
-    vim.lsp.enable(name)
-  end
 end
-vim.g.hephaestus_language_server_commands = required_commands
-if #missing > 0 then
-  table.sort(missing)
-  vim.schedule(function()
-    vim.notify("Hephaestus: missing language servers:\n" .. table.concat(missing, "\n"), vim.log.levels.WARN)
-  end)
-end
+local installed = vim.tbl_keys(servers)
+table.sort(installed)
+require("mason-lspconfig").setup({ ensure_installed = installed, automatic_enable = installed })
 vim.api.nvim_create_autocmd("LspAttach", {
   callback = function(event)
     local client = vim.lsp.get_client_by_id(event.data.client_id)

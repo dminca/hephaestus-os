@@ -122,7 +122,7 @@ func parseRecipeModule(content, moduleType string) (recipeModule, error) {
 
 func (module recipeModule) installsSystemFlatpak(application string) bool {
 	for _, configuration := range module.Configurations {
-		flathub := (configuration.Repo.Name == "" || configuration.Repo.Name == "flathub") &&
+		flathub := (configuration.Repo.Name == "" || configuration.Repo.Name == "flathub" || configuration.Repo.Name == "flathub-verified") &&
 			(configuration.Repo.URL == "" || configuration.Repo.URL == "https://dl.flathub.org/repo/flathub.flatpakrepo")
 		if configuration.Scope == "system" && flathub &&
 			slices.Contains(configuration.Install, application) {
@@ -140,7 +140,22 @@ func TestSystemFlatpaks(t *testing.T) {
 	var systemApps []string
 	for _, configuration := range module.Configurations {
 		if configuration.Scope == "system" {
+			if configuration.Repo.Name != "flathub-verified" {
+				t.Fatal("system Flatpaks must use the verified remote")
+			}
 			systemApps = append(systemApps, configuration.Install...)
+		} else {
+			t.Fatal("recipe must not add an unfiltered user remote")
+		}
+		dropin := readFile(t, filepath.Join(repository(t),
+			"files/system/etc/systemd/system/system-flatpak-setup.service.d/verified.conf"))
+		for _, command := range []string{
+			"ExecStartPre=/usr/bin/flatpak remote-add --system --if-not-exists --subset=verified",
+			"ExecStartPre=/usr/bin/flatpak remote-modify --system --subset=verified flathub-verified",
+		} {
+			if !strings.Contains(dropin, command) {
+				t.Fatalf("verified filtering must be enforced before installing Flatpaks: %s", command)
+			}
 		}
 	}
 	if !slices.Equal(systemApps, []string{"com.nextcloud.desktopclient.nextcloud"}) {

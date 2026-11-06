@@ -17,26 +17,6 @@
   "customManagers": [
     {
       "customType": "regex",
-      "description": "Track branch commits in the lazy.nvim plugin lock",
-      "managerFilePatterns": ["files/system/usr/share/hephaestus/nvim/lazy-lock.json"],
-      "matchStrings": [
-        "\"branch\":\\s*\"(?:HEAD|(?<currentValue>[^\"]+))\",\\s*\"commit\":\\s*\"(?<currentDigest>[a-f0-9]{40})\",\\s*\"repository\":\\s*\"(?<depName>[^\"]+)\",\\s*\"type\":\\s*\"branch\""
-      ],
-      "packageNameTemplate": "https://github.com/{{{depName}}}",
-      "datasourceTemplate": "git-refs"
-    },
-    {
-      "customType": "regex",
-      "description": "Track release tags in the lazy.nvim plugin lock",
-      "managerFilePatterns": ["files/system/usr/share/hephaestus/nvim/lazy-lock.json"],
-      "matchStrings": [
-        "\"branch\":\\s*\"(?<currentValue>[^\"]+)\",\\s*\"commit\":\\s*\"(?<currentDigest>[a-f0-9]{40})\",\\s*\"repository\":\\s*\"(?<depName>[^\"]+)\",\\s*\"type\":\\s*\"release\""
-      ],
-      "datasourceTemplate": "github-tags",
-      "versioningTemplate": "semver"
-    },
-    {
-      "customType": "regex",
       "description": "Track binary release catalog versions",
       "managerFilePatterns": ["tools/lock-binaries/main.go"],
       "matchStrings": [
@@ -55,16 +35,6 @@
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "Flow-Tube/Flow-Desktop",
       "versioningTemplate": "semver"
-    },
-    {
-      "customType": "regex",
-      "description": "Track locked Rust source revisions",
-      "managerFilePatterns": ["files/scripts/install-profile.sh"],
-      "matchStrings": [
-        "cargo install --locked --git https://github.com/(?<depName>[^\\s]+)\\s+\\\\\\s+--rev (?<currentDigest>[a-f0-9]{40})"
-      ],
-      "packageNameTemplate": "https://github.com/{{{depName}}}",
-      "datasourceTemplate": "git-refs"
     },
     {
       "customType": "regex",
@@ -92,20 +62,6 @@
   ],
   "packageRules": [
     {
-      "matchFileNames": ["files/system/usr/share/hephaestus/nvim/lazy-lock.json"],
-      "groupName": "Neovim plugin pins",
-      "postUpgradeTasks": {
-        "commands": ["go run ./tools/lock-profile"],
-        "fileFilters": ["files/system/usr/share/hephaestus/sources.lock.json"],
-        "executionMode": "branch"
-      }
-    },
-    {
-      "matchPackageNames": ["saghen/blink.cmp"],
-      "dependencyDashboardApproval": true,
-      "groupName": "Reviewed Neovim release pins"
-    },
-    {
       "matchFileNames": ["tools/lock-binaries/main.go"],
       "groupName": "Pinned binary releases",
       "postUpgradeTasks": {
@@ -113,14 +69,6 @@
         "fileFilters": ["files/system/usr/share/hephaestus/binaries.lock.json"],
         "executionMode": "branch"
       }
-    },
-    {
-      "matchPackageNames": ["artempyanykh/marksman"],
-      "versioning": "regex:^(?<major>\\d{4})-(?<minor>\\d{2})-(?<patch>\\d{2})$"
-    },
-    {
-      "matchPackageNames": ["haskell/haskell-language-server"],
-      "versioning": "loose"
     },
     {
       "matchPackageNames": ["Flow-Tube/Flow-Desktop"],
@@ -175,22 +123,6 @@
       "matchDepTypes": ["engines", "packageManager"],
       "matchPackageNames": ["npm"],
       "allowedVersions": "^11.0.0"
-    },
-    {
-      "matchManagers": ["npm"],
-      "matchFileNames": ["files/system/usr/share/hephaestus/node/package.json"],
-      "matchPackageNames": ["typescript", "svelte-language-server", "typescript-language-server"],
-      "groupName": "TypeScript and Svelte compatibility"
-    },
-    {
-      "description": "TypeScript 7 drops tsserver and is outside the pinned Svelte peer range",
-      "matchManagers": ["npm"],
-      "matchPackageNames": ["typescript"],
-      "allowedVersions": "<7"
-    },
-    {
-      "matchPackageNames": ["oxalica/nil", "nerdypepper/statix"],
-      "groupName": "Rust source pins"
     },
     {
       "matchPackageNames": ["blue-build/cli", "ghcr.io/blue-build/modules/**", "ghcr.io/blue-build/nushell-image"],

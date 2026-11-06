@@ -57,7 +57,7 @@ return {
     progress = { display = { progress_icon = { pattern = "moon" } } },
     notification = { window = { relative = "editor", winblend = 0, border = "none" } },
   } },
-  { "ThePrimeagen/harpoon", opts = {} },
+  { "ThePrimeagen/harpoon", branch = "harpoon2", opts = {} },
   { "akinsho/bufferline.nvim", opts = { options = {
     diagnostics = "nvim_lsp", always_show_bufferline = true,
     hover = { enabled = true, delay = 200, reveal = { "close" } },
@@ -103,9 +103,9 @@ return {
       localSettings = { [".*"] = { takeover = "never", cmdline = "neovim" } },
     }
   end },
-  { "niksingh710/leetcode.nvim", cmd = "Leet", opts = { lang = "python3" } },
+  { "niksingh710/leetcode.nvim", commit = "cab77da208b0abca7070ef4213bc4cea1a339ada", cmd = "Leet", opts = { lang = "python3" } },
   { "L3MON4D3/LuaSnip", opts = {} },
-  { "saghen/blink.cmp", opts = {
+  { "saghen/blink.cmp", version = "v1.10.2", opts = {
     fuzzy = { implementation = "lua" },
     snippets = { preset = "luasnip" },
     completion = { menu = { border = "rounded" }, list = { selection = { preselect = false } } },
@@ -116,23 +116,22 @@ return {
       ["<C-space>"] = { "select_and_accept", "fallback" },
     },
   } },
-  { "nvim-treesitter/nvim-treesitter", config = function()
-    local directory = vim.g.hephaestus_assets .. "/nvim/treesitter"
-    require("nvim-treesitter").setup({ install_dir = directory })
-    vim.api.nvim_create_autocmd("FileType", {
-      callback = function(event)
-        local language = vim.treesitter.language.get_lang(vim.bo[event.buf].filetype)
-        if language and vim.fn.filereadable(directory .. "/parser/" .. language .. ".so") == 1 then
-          vim.treesitter.start(event.buf, language)
-          vim.bo[event.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
-        end
-      end,
-    })
-  end },
+  { "nvim-treesitter/nvim-treesitter", commit = "c6dd314086f7b471bf6c9110092a94ce1c06d220",
+    lazy = false, build = ":TSUpdate", config = function() require("hephaestus.treesitter").setup() end },
   { "nvim-treesitter/nvim-treesitter-context", opts = { max_lines = 4, min_window_height = 40 } },
   { "echasnovski/mini.ai", opts = {} },
   { "tpope/vim-sleuth" },
-  { "neovim/nvim-lspconfig", config = function() require("hephaestus.languages") end },
+  { "mason-org/mason.nvim", opts = {} },
+  { "WhoIsSethDaniel/mason-tool-installer.nvim", dependencies = { "mason-org/mason.nvim" }, opts = {
+    ensure_installed = {
+      "tree-sitter-cli", "rust-analyzer", "goimports", "stylua", "nixfmt",
+      "shellcheck", "shellharden", "shfmt", "taplo", "typstyle", "fixjson",
+    },
+    auto_update = false, run_on_start = true,
+  } },
+  { "neovim/nvim-lspconfig", dependencies = {
+    "mason-org/mason.nvim", "mason-org/mason-lspconfig.nvim", "saghen/blink.cmp",
+  }, config = function() require("hephaestus.languages") end },
   { "stevearc/conform.nvim", opts = {
     default_format_opts = { lsp_format = "prefer" },
     formatters_by_ft = {
@@ -165,7 +164,8 @@ return {
   end },
   { "saecki/crates.nvim", opts = {} },
   { "HakonHarnes/img-clip.nvim", opts = {} },
-  { "iamcco/markdown-preview.nvim", ft = "markdown", init = function()
+  { "iamcco/markdown-preview.nvim", ft = "markdown",
+    build = ":call mkdp#util#install_sync()", init = function()
     vim.g.mkdp_echo_preview_url = 1
     -- Keep the preview bound to loopback rather than exposing it to the LAN.
     vim.g.mkdp_open_to_the_world = 0
@@ -182,18 +182,13 @@ return {
     end } },
   } },
   { "ellisonleao/glow.nvim", cmd = "Glow", opts = {} },
-  { "chomosuke/typst-preview.nvim", opts = {
-    dependencies_bin = {
-      tinymist = "/usr/libexec/hephaestus/bin/tinymist",
-      websocat = "/usr/libexec/hephaestus/bin/websocat",
-    },
-  } },
+  { "chomosuke/typst-preview.nvim", opts = {} },
   { "mistweaverco/kulala.nvim", ft = { "http", "rest" }, opts = {
     global_keymaps = true, global_keymaps_prefix = "<leader>R", kulala_keymaps_prefix = "",
   } },
   { "windwp/nvim-ts-autotag", opts = {} },
   { "folke/ts-comments.nvim", opts = {} },
-  { "mistricky/codesnap.nvim", cmd = { "CodeSnap", "CodeSnapSave" }, opts = {
+  { "mistricky/codesnap.nvim", build = "make", cmd = { "CodeSnap", "CodeSnapSave" }, opts = {
     snapshot_config = {
       background = { stops = { { color = "#00000000" }, { color = "#00000000" } } },
       theme = "vercel@https://raw.githubusercontent.com/Railly/one-hunter-vscode/refs/heads/main/themes/OneHunter-Vercel-color-theme.json",
@@ -201,7 +196,7 @@ return {
     },
   } },
   { "vyfor/cord.nvim", event = "VeryLazy", opts = { advanced = { server = {
-    auto_update = false, executable_path = "/usr/libexec/hephaestus/cord",
+    auto_update = false,
   } } } },
   { "amitds1997/remote-nvim.nvim", cmd = "RemoteNvim", opts = {} },
 }

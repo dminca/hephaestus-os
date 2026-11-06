@@ -8,89 +8,67 @@ import (
 	"testing"
 )
 
-func TestParserBuildReportsCompleteFailures(t *testing.T) {
+func TestUserParserInstallation(t *testing.T) {
 	nvim, err := exec.LookPath("nvim")
 	if err != nil {
-		t.Skip("Neovim is required for parser failure fixtures")
+		t.Skip("Neovim is required for parser installation tests")
 	}
-	versionCheck := exec.Command(nvim, "--headless", "-u", "NONE",
-		"+lua if vim.fn.has('nvim-0.11') == 0 then vim.cmd('cquit') end", "+qa!")
-	if err := versionCheck.Run(); err != nil {
-		t.Skip("Neovim 0.11 or newer is required for parser failure fixtures")
-	}
-	script := filepath.Join(repository(t), "files/system/usr/share/hephaestus/build-parsers.lua")
-	fixtures := []struct {
-		name    string
-		mode    string
-		message string
-	}{
-		{name: "success", mode: "success", message: "All 42 native Treesitter parsers built"},
-		{name: "unknown parsers", mode: "unknown", message: "Unavailable parsers in pinned plugin: bash, c"},
-		{name: "unsupported parser", mode: "unsupported", message: "Unavailable parsers in pinned plugin: bash"},
-		{name: "missing parsers", mode: "missing", message: "bash: parser file missing\nc: parser file missing"},
-		{name: "unloadable parser", mode: "unloadable", message: "bash: incompatible parser ABI"},
-		{name: "parser rejected", mode: "rejected", message: "bash: false"},
-		{name: "installer failure", mode: "failed", message: "Treesitter installation reported a failure"},
-	}
-	for _, fixture := range fixtures {
-		t.Run(fixture.name, func(t *testing.T) {
+	for _, mode := range []string{"success", "failed", "delayed"} {
+		t.Run(mode, func(t *testing.T) {
 			driver := filepath.Join(t.TempDir(), "driver.lua")
-			content := `
+			writeFile(t, driver, `
 local mode = vim.env.HEPHAESTUS_TEST_MODE
-local languages
-package.preload["nvim-treesitter.parsers"] = function()
-  return setmetatable({}, { __index = function(_, language)
-    if mode == "unknown" and (language == "bash" or language == "c") then return nil end
-    return { tier = mode == "unsupported" and language == "bash" and 4 or 1 }
-  end })
+local ready = mode ~= "delayed"
+local installs, starts = 0, 0
+local notifications = {}
+vim.notify = function(message, level)
+  assert(level == vim.log.levels.ERROR)
+  notifications[#notifications + 1] = message
 end
+vim.fn.executable = function() return ready and 1 or 0 end
+vim.fn.filereadable = function(path)
+  assert(path:find(vim.fn.stdpath("data"), 1, true), "parser path is not user-owned")
+  return 1
+end
+vim.treesitter.language.get_lang = function() return "lua" end
+vim.treesitter.start = function() starts = starts + 1 end
 package.preload["nvim-treesitter"] = function()
   return {
-    setup = function() end,
-    install = function(requested, options)
-      assert(mode ~= "unknown" and mode ~= "unsupported", "invalid parsers reached installation")
-      assert(options.summary and options.max_jobs == 4, "missing bounded build settings")
-      for _, language in ipairs(requested) do
-        assert(language ~= "jsonc", "JSONC is a filetype, not a parser")
-      end
-      languages = requested
-      return { wait = function(_, timeout)
-        assert(timeout == 600000)
-        return mode ~= "failed"
+    setup = function(options)
+      assert(options.install_dir == vim.fn.stdpath("data") .. "/site")
+    end,
+    install = function(languages, options)
+      installs = installs + 1
+      assert(#languages == 42 and options.max_jobs == 4)
+      return { await = function(_, callback)
+        vim.defer_fn(function() callback(nil, mode ~= "failed") end, 10)
       end }
     end,
   }
 end
-vim.fn.filereadable = function(filename)
-  if mode == "missing" and (filename:match("/bash%.so$") or filename:match("/c%.so$")) then return 0 end
-  return 1
+dofile(vim.env.HEPHAESTUS_TEST_SCRIPT).setup()
+vim.wait(30)
+if mode == "delayed" then
+  assert(installs == 0, "installation started before tree-sitter CLI was ready")
+  ready = true
+  vim.api.nvim_exec_autocmds("User", { pattern = "MasonToolsUpdateCompleted" })
+  vim.wait(30)
 end
-vim.treesitter.language.add = function(language)
-  assert(vim.list_contains(languages, language), "unrequested parser checked")
-  if mode == "unloadable" and language == "bash" then error("incompatible parser ABI", 0) end
-  if mode == "rejected" and language == "bash" then return false end
-  return true
+assert(installs == 1)
+if mode == "failed" then
+  assert(#notifications == 1 and notifications[1]:find(":TSInstall"))
+else
+  assert(#notifications == 0 and starts > 0)
 end
-dofile(vim.env.HEPHAESTUS_TEST_SCRIPT)
-`
-			if err := os.WriteFile(driver, []byte(content), 0o600); err != nil {
-				t.Fatal(err)
-			}
+io.stdout:write("User parser installation passed\n")
+`, 0o600)
 			command := exec.Command(nvim, "--headless", "-u", "NONE", "-l", driver)
 			command.Env = append(os.Environ(),
-				"HEPHAESTUS_TEST_MODE="+fixture.mode,
-				"HEPHAESTUS_TEST_SCRIPT="+script,
-			)
+				"HEPHAESTUS_TEST_MODE="+mode,
+				"HEPHAESTUS_TEST_SCRIPT="+filepath.Join(repository(t), "files/system/usr/share/hephaestus/profile/config/nvim/lua/hephaestus/treesitter.lua"))
 			output, err := command.CombinedOutput()
-			if fixture.mode == "success" && err != nil {
-				t.Fatalf("parser build failed: %v\n%s", err, output)
-			}
-			if fixture.mode != "success" && err == nil {
-				t.Fatalf("parser failure did not stop the build:\n%s", output)
-			}
-			normalized := strings.ReplaceAll(string(output), "\r\n", "\n")
-			if !strings.Contains(normalized, fixture.message) {
-				t.Fatalf("expected %q, got:\n%s", fixture.message, output)
+			if err != nil || !strings.Contains(string(output), "User parser installation passed") {
+				t.Fatalf("parser installation failed: %v\n%s", err, output)
 			}
 		})
 	}

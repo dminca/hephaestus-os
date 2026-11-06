@@ -6,21 +6,29 @@ vim.treesitter.language.register("json", "jsonc")
 require("hephaestus.options")
 require("hephaestus.mappings")
 
-local plugins = vim.g.hephaestus_assets .. "/nvim/plugins"
-if vim.fn.isdirectory(plugins .. "/lazy.nvim") == 0 then
-  error("Hephaestus Neovim plugins are missing; run the image build's install-profile.sh")
+local lazy = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+if vim.fn.isdirectory(lazy) == 0 then
+  local result = vim.system({
+    "git", "clone", "--filter=blob:none", "--branch=stable",
+    "https://github.com/folke/lazy.nvim.git", lazy,
+  }, { text = true }):wait()
+  if result.code ~= 0 then
+    vim.notify("Could not install lazy.nvim:\n" .. (result.stderr or "")
+      .. "\nRestart Neovim to retry.", vim.log.levels.ERROR)
+    return
+  end
 end
-vim.opt.runtimepath:prepend(plugins .. "/lazy.nvim")
-local specs = require("hephaestus.plugins")
-for _, spec in ipairs(specs) do
-  spec.dir = plugins .. "/" .. spec[1]:match("[^/]+$")
-  spec[1] = nil
+vim.opt.runtimepath:prepend(lazy)
+local lock = vim.fn.stdpath("state") .. "/lazy-lock.json"
+if vim.fn.filereadable(lock) == 0 then
+  vim.fn.mkdir(vim.fn.stdpath("state"), "p")
+  local seed = vim.fn.readfile(config .. "/lazy-lock.json")
+  assert(vim.fn.writefile(seed, lock) == 0, "Could not seed user plugin lock: " .. lock)
 end
-require("lazy").setup(specs, {
-  root = vim.fn.stdpath("data") .. "/hephaestus-lazy",
-  lockfile = vim.g.hephaestus_assets .. "/nvim/lazy-lock.json",
+require("lazy").setup(require("hephaestus.plugins"), {
+  lockfile = lock,
   defaults = { lazy = false },
-  install = { missing = false },
+  install = { missing = true },
   checker = { enabled = false },
   change_detection = { enabled = false },
   pkg = { enabled = false },

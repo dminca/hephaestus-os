@@ -8,7 +8,6 @@ module.exports = {
     GH_TOKEN: process.env.GH_TOKEN,
   },
   allowedCommands: [
-    "^go run \\.\\/tools\\/lock-profile$",
     "^go run \\.\\/tools\\/lock-binaries$",
     "^bash tools\\/update-flow-desktop-pin\\.sh$",
   ],
