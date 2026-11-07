@@ -62,6 +62,16 @@ completes, log out and back in to start it, or open Nextcloud manually. Account
 setup and sync folders remain per-user. An existing user autostart override can
 disable the system autostart entry.
 
+Memonotes (`io.github.robvaneck.Memonotes`) is installed per-user on first login
+from its GitHub Flatpak bundle. Each user gets a Flathub remote named
+`flatpak-memonotes`, restricted to Flathub's verified subset. Memonotes is not
+currently published on Flathub, so its bundle is downloaded directly and checked
+against the GitHub release SHA-256 before installation. To update it, change the
+pinned release version and asset checksum in
+`files/system/usr/libexec/hephaestus/install-memonotes-flatpak` from the upstream
+release metadata, then rebuild the image. The custom remote does not provide
+Memonotes updates until the app is published there.
+
 ## Updating pinned binaries
 
 The `artifacts` catalog in `tools/lock-binaries/main.go` is the master list of
