@@ -95,6 +95,12 @@ modules:
         notify: true
         repo:
           name: flathub
+      - scope: user
+        notify: false
+        repo:
+          name: flatpak-memonotes
+          title: Memonotes
+          url: https://dl.flathub.org/repo/flathub.flatpakrepo
 
   - type: signing # this sets up the proper policy & signing files for signed images to work fully
     source: ghcr.io/blue-build/modules/signing:latest@sha256:6227e5ac294e9b60a77836775700df879d8a39b184ca3e511edf73cc58f1f4a6
