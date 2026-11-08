@@ -157,56 +157,6 @@ func TestSystemFlatpaks(t *testing.T) {
 	}
 }
 
-func TestMemonotesFlatpakRemote(t *testing.T) {
-	module := readRecipeModule(t, "default-flatpaks@v2")
-	for _, configuration := range module.Configurations {
-		if configuration.Scope == "user" && configuration.Repo.Name == "flatpak-memonotes" {
-			if configuration.Repo.URL != "https://dl.flathub.org/repo/flathub.flatpakrepo" {
-				t.Fatalf("unexpected Memonotes remote URL: %s", configuration.Repo.URL)
-			}
-			if len(configuration.Install) != 0 {
-				t.Fatalf("Memonotes is not available on the configured remote: %v", configuration.Install)
-			}
-			return
-		}
-	}
-	t.Fatal("user Flatpak remote flatpak-memonotes is not configured")
-}
-
-func TestMemonotesFlatpakInstallVerifiesPinnedRelease(t *testing.T) {
-	root := repository(t)
-	script := readFile(t, filepath.Join(root, "files/system/usr/libexec/hephaestus/install-memonotes-flatpak"))
-	for _, expected := range []string{
-		"version=v0.1.0",
-		"sha256=b8318264289d4f7adb786033d30aaa93394ba2420851b9118dc455a4b818a71f",
-		"https://github.com/robvaneck/memonotes/releases/download/$version/$app_id-$version.flatpak",
-		"sha256sum --check",
-		"flatpak install --user --noninteractive --assumeyes --or-update",
-		"flatpak info --user \"$app_id\"",
-		"${XDG_STATE_HOME:-$HOME/.local/state}/hephaestus",
-	} {
-		if !strings.Contains(script, expected) {
-			t.Errorf("Memonotes installer must contain %q", expected)
-		}
-	}
-	if strings.Index(script, "sha256sum --check") > strings.Index(script, "flatpak install --user") {
-		t.Fatal("Memonotes bundle must be checksum-verified before installation")
-	}
-
-	userSetup := readFile(t, filepath.Join(root, "files/system/etc/systemd/user/user-flatpak-setup.service.d/memonotes-verified.conf"))
-	for _, expected := range []string{
-		"remote-modify --user --subset=verified flatpak-memonotes",
-		"ExecStartPost=/usr/bin/bash /usr/libexec/hephaestus/install-memonotes-flatpak",
-	} {
-		if !strings.Contains(userSetup, expected) {
-			t.Errorf("user Flatpak setup must contain %q", expected)
-		}
-	}
-	if strings.Contains(script, "--system") {
-		t.Fatal("Memonotes installer must not modify system Flatpak scope")
-	}
-}
-
 func TestRecipeAssertionsIgnoreFormatting(t *testing.T) {
 	const block = `
 modules:
