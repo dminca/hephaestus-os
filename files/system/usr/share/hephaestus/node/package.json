@@ -1,26 +1,14 @@
 {
-  "name": "hephaestus-editor-tools",
+  "name": "hephaestus-preview-tools",
   "version": "1.0.0",
   "private": true,
-  "description": "Image-built native Neovim language servers and preview tools",
+  "description": "System Mermaid CLI for document previews",
   "engines": {
     "node": "^24.11.0",
     "npm": "^11.0.0"
   },
   "packageManager": "npm@11.21.1",
   "dependencies": {
-    "@biomejs/biome": "2.6.4",
-    "@mermaid-js/mermaid-cli": "12.0.0",
-    "@tailwindcss/language-server": "0.16.0",
-    "bash-language-server": "5.8.1",
-    "emmet-ls": "0.4.2",
-    "fixjson": "1.1.2",
-    "pyright": "1.1.414",
-    "svelte-language-server": "0.18.5",
-    "typescript": "6.0.3",
-    "typescript-language-server": "6.0.2",
-    "vscode-langservers-extracted": "4.10.0",
-    "yaml-language-server": "2.0.0",
-    "yarn": "1.22.22"
+    "@mermaid-js/mermaid-cli": "12.0.0"
   }
 }

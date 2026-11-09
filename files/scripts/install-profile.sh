@@ -11,7 +11,6 @@ export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_CACHE_HOME="$HOME/.cache"
 export XDG_DATA_HOME="$HOME/.local/share"
 export XDG_STATE_HOME="$HOME/.local/state"
-export CARGO_HOME="$temporary/cargo"
 export PUPPETEER_SKIP_DOWNLOAD=true
 mkdir -p "$HOME"
 
@@ -35,26 +34,7 @@ kwallet-query --help >/dev/null
 )
 "$temporary/hephaestus-assets" sources
 "$temporary/hephaestus-assets" binaries
-ln -s /usr/libexec/hephaestus/lua-language-server/bin/lua-language-server \
-  /usr/libexec/hephaestus/bin/lua-language-server
-make -C /usr/libexec/hephaestus/haskell-language-server install \
-  PREFIX=/usr/libexec/hephaestus/hls \
-  BINDIR=/usr/libexec/hephaestus/bin
-rm -r -- /usr/libexec/hephaestus/haskell-language-server
-
-cargo install --locked --git https://github.com/oxalica/nil \
-  --rev dbbb5c24f9215476992aa1bd305f8e5398e89654 --root /usr/libexec/hephaestus nil
-cargo install --locked --git https://github.com/nerdypepper/statix \
-  --rev d324490e45bcda1b664f28b6f88da8580deda76b --root /usr/libexec/hephaestus statix
-
 cue version
-marksman --version
-markdown-oxide --version
-tofu-ls version
-lua-language-server --version
-haskell-language-server-wrapper --version
-nil --version
-statix --version
 witr --version
 hunk --version
 
@@ -68,31 +48,7 @@ for binary in $node_binaries; do
 done
 install -m 0755 "$assets/mmdc" /usr/libexec/hephaestus/bin/mmdc
 
-node "$assets/node/node_modules/yarn/bin/yarn.js" \
-  --cwd "$plugins/markdown-preview.nvim/app" install \
-  --frozen-lockfile --production --ignore-scripts --non-interactive
-
-cargo build --locked --release --manifest-path "$plugins/cord.nvim/Cargo.toml" \
-  --target-dir "$temporary/cord-target"
-install -Dm755 "$temporary/cord-target/release/cord" /usr/libexec/hephaestus/cord/bin/cord
-
-tree-sitter --version
-expected_tree_sitter_version=$("$temporary/hephaestus-assets" binary-version tree-sitter)
-test "$(tree-sitter --version | cut -d ' ' -f 2)" = "$expected_tree_sitter_version"
-nvim --headless -u NONE -l "$assets/build-parsers.lua"
-
-(
-  cd "$assets/go-tools"
-  GOTOOLCHAIN=local go build -mod=readonly -trimpath \
-    -o /usr/libexec/hephaestus/bin/ \
-    golang.org/x/tools/cmd/goimports mvdan.cc/sh/v3/cmd/shfmt
-)
-shfmt --version
-
 install -Dm644 "$plugins/bat/themes/Catppuccin Mocha.tmTheme" \
   "$assets/profile/config/bat/themes/CatppuccinMocha.tmTheme"
 BAT_CACHE_PATH="$assets/bat" bat cache --build --source "$assets/profile/config/bat"
 zsh -n "$assets/profile/zshrc"
-HEPHAESTUS_REPO=/tmp/bluebuild nvim --headless -u "$assets/profile/config/nvim/init.lua" \
-  '+lua assert(vim.g.mapleader == " " and vim.o.shiftwidth == 2)' '+qa!'
-nvim --headless -u "$assets/profile/config/nvim/init.lua" -l "$assets/check-language-servers.lua"

@@ -50,72 +50,12 @@ jobs:
           (cd files/system/usr/share/hephaestus/node && npm ci --omit=dev --no-audit --no-fund)
       - name: Check dependency behavior and Renovate configuration
         run: |
-          node --test tests/renovate-config.test.cjs tests/dependencies/node-runtime.test.cjs tests/dependencies/npm-install.test.cjs tests/dependencies/renovate-policy.test.cjs tests/dependencies/editor-tools.test.cjs
+          node --test tests/renovate-config.test.cjs tests/dependencies/*.test.cjs
           .github/renovate/node_modules/.bin/renovate-config-validator --strict renovate.json5
           git diff --exit-code -- '**/package*.json'
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
-        with:
-          go-version-file: files/system/usr/share/hephaestus/go-tools/go.mod
-      - name: Validate native tool installation constraints
-        run: |
-          cargo --version
-          rustc --version
-          go test -count=1 -tags=integration ./tests -run 'TestGoTool|TestRust' -v
-
-  node-runtimes:
-    name: Check Node ${{ matrix.node }} / npm ${{ matrix.npm }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        node: ["24.11.0", "24.15.0", "24", "24.10.0", "24.14.0", "22", "26"]
-        npm: ["declared"]
-        include:
-          - node: "24"
-            npm: "10"
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
-        with:
-          node-version-file: .github/renovate/package.json
-      - name: Install test dependencies with the supported runtime
-        run: |
-          package_manager=$(node -p "require('./.github/renovate/package.json').packageManager")
-          npm install --global "$package_manager"
-          (cd .github/renovate && npm ci --no-audit --no-fund)
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
-        with:
-          node-version: ${{ matrix.node }}
-      - name: Select npm version
-        env:
-          NPM_VERSION: ${{ matrix.npm }}
-        run: |
-          if [ "$NPM_VERSION" = declared ]; then
-            package_manager=$(node -p "require('./.github/renovate/package.json').packageManager")
-            npm install --global "$package_manager"
-          else
-            npm install --global "npm@$NPM_VERSION"
-          fi
-      - name: Test real runtime acceptance and rejection
-        run: node --test tests/dependencies/node-runtime.test.cjs
-      - name: Clean-install full graphs on supported runtimes
-        if: matrix.npm == 'declared' && (matrix.node == '24.15.0' || matrix.node == '24')
-        env:
-          PUPPETEER_SKIP_DOWNLOAD: "true"
-        run: |
-          (cd .github/renovate && npm ci --no-audit --no-fund)
-          (cd files/system/usr/share/hephaestus/node && npm ci --omit=dev --no-audit --no-fund)
-      - name: Clean-install editor graph at its lower supported boundary
-        if: matrix.npm == 'declared' && matrix.node == '24.11.0'
-        env:
-          PUPPETEER_SKIP_DOWNLOAD: "true"
-        run: cd files/system/usr/share/hephaestus/node && npm ci --omit=dev --no-audit --no-fund
-
   bluebuild:
     name: Build Custom Image
-    needs: [tests, dependencies, node-runtimes]
+    needs: [tests, dependencies]
     runs-on: ubuntu-latest
     permissions:
       contents: read

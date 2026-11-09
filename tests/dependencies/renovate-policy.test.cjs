@@ -24,18 +24,9 @@ async function policy(packageName, packageFile, depType = "dependencies") {
   });
 }
 
-test("effective TypeScript policy allows 6 and rejects 7", async () => {
-  const result = await policy("typescript", "files/system/usr/share/hephaestus/node/package.json");
-  assert.ok(semver.satisfies("6.0.3", result.allowedVersions));
-  assert.equal(semver.satisfies("7.0.2", result.allowedVersions), false);
-});
-
-test("TypeScript and Svelte stay separate from unrelated npm and Renovate updates", async () => {
-  const editor = "files/system/usr/share/hephaestus/node/package.json";
-  for (const name of ["typescript", "svelte-language-server", "typescript-language-server"]) {
-    assert.equal((await policy(name, editor)).groupName, "TypeScript and Svelte compatibility");
-  }
-  assert.notEqual((await policy("pyright", editor)).groupName, "TypeScript and Svelte compatibility");
+test("system preview tools stay separate from Renovate updates", async () => {
+  assert.equal((await policy("@mermaid-js/mermaid-cli", "files/system/usr/share/hephaestus/node/package.json")).groupName,
+    "npm major upgrades");
   assert.equal((await policy("renovate", ".github/renovate/package.json")).groupName, "Renovate runtime");
 });
 
@@ -51,66 +42,13 @@ test("runtime policy rejects automatic Node 26 and npm 12 updates", async () => 
   }
 });
 
-test("custom managers extract both Rust revisions and every BlueBuild module digest", async () => {
+test("custom managers extract every BlueBuild module digest", async () => {
   const { extractPackageFile } = await load("modules/manager/custom/regex/index.js");
-  const script = readFileSync(path.join(root, "files/scripts/install-profile.sh"), "utf8");
-  const rust = config.customManagers.find((manager) => manager.description === "Track locked Rust source revisions");
-  const sources = extractPackageFile(script, "files/scripts/install-profile.sh", rust);
-  assert.deepEqual(sources.deps.map((dep) => dep.depName), ["oxalica/nil", "nerdypepper/statix"]);
-  for (const dep of sources.deps) assert.match(dep.currentDigest, /^[a-f0-9]{40}$/);
   const modules = config.customManagers.find((manager) => manager.description === "Track immutable BlueBuild module images");
   const recipe = readFileSync(path.join(root, "recipes/recipe.yml"), "utf8");
   const images = extractPackageFile(recipe, "recipes/recipe.yml", modules);
   assert.equal(images.deps.length, 6);
   for (const dep of images.deps) assert.match(dep.currentDigest, /^sha256:[a-f0-9]{64}$/);
-});
-
-test("custom managers track lazy.nvim branch and release pins but leave held pins alone", async () => {
-  const { extractPackageFile } = await load("modules/manager/custom/regex/index.js");
-  const filename = "files/system/usr/share/hephaestus/nvim/lazy-lock.json";
-  const content = readFileSync(path.join(root, filename), "utf8");
-  const lock = JSON.parse(content);
-  for (const [description, type] of [
-    ["Track branch commits in the lazy.nvim plugin lock", "branch"],
-    ["Track release tags in the lazy.nvim plugin lock", "release"],
-  ]) {
-    const manager = config.customManagers.find((entry) => entry.description === description);
-    const extracted = extractPackageFile(content, filename, manager);
-    const expected = Object.values(lock).filter((pin) => pin.type === type);
-    assert.equal(extracted.deps.length, expected.length);
-    for (const pin of expected) {
-      const dep = extracted.deps.find((entry) => entry.depName === pin.repository);
-      assert.ok(dep, `Renovate did not extract ${pin.repository}`);
-      assert.equal(dep.currentDigest, pin.commit);
-      assert.equal(dep.currentValue, type === "branch" && pin.branch === "HEAD" ? undefined : pin.branch);
-    }
-  }
-  const held = Object.values(lock).filter((pin) => pin.type === "held");
-  assert.ok(held.length > 0);
-  for (const pin of held) {
-    assert.ok(!config.customManagers.some((manager) => manager.matchStrings.some((pattern) =>
-      new RegExp(pattern).test(JSON.stringify(pin)))));
-  }
-});
-
-test("Rust revision updates resolve the default branch without treating HEAD as a named ref", async () => {
-  const { extractPackageFile } = await load("modules/manager/custom/regex/index.js");
-  const { GitRefsDatasource } = await load("modules/datasource/git-refs/index.js");
-  const filename = "files/scripts/install-profile.sh";
-  const manager = config.customManagers.find((entry) => entry.description === "Track locked Rust source revisions");
-  const extracted = extractPackageFile(readFileSync(path.join(root, filename), "utf8"), filename, manager);
-  assert.ok(extracted.deps.length > 0);
-  const digest = "a".repeat(40);
-  const datasource = new GitRefsDatasource();
-  datasource.getRawRefs = async () => [
-    { type: "", value: "HEAD", hash: digest },
-    { type: "heads", value: "main", hash: digest },
-  ];
-  assert.equal(await datasource.getDigest({}, "HEAD"), null);
-  for (const dependency of extracted.deps) {
-    assert.equal(dependency.currentValue, undefined);
-    assert.equal(await datasource.getDigest(dependency, dependency.currentValue), digest);
-  }
 });
 
 test("BlueBuild CLI pins agree and the Nushell image includes a digest", async () => {
