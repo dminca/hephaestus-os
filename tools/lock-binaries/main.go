@@ -56,7 +56,7 @@ var artifacts = []artifactSpec{
 		bundle: "haskell-language-server", stripRoot: true,
 	},
 	{
-		repository: "tree-sitter/tree-sitter", version: "v0.27.1",
+		repository: "tree-sitter/tree-sitter", version: "v0.27.2",
 		filename: "tree-sitter-linux-x64.gz",
 		binaries: []string{"tree-sitter"}, license: "MIT",
 	},
@@ -81,12 +81,12 @@ var artifacts = []artifactSpec{
 		binaries: []string{"taplo"}, license: "MIT",
 	},
 	{
-		repository: "tekumara/typos-lsp", version: "v0.1.57",
+		repository: "tekumara/typos-lsp", version: "v0.1.58",
 		filename: "typos-lsp-{version}-x86_64-unknown-linux-musl.tar.gz",
 		binaries: []string{"typos-lsp"}, license: "MIT",
 	},
 	{
-		repository: "Myriad-Dreamin/tinymist", version: "v0.15.10",
+		repository: "Myriad-Dreamin/tinymist", version: "v0.15.12",
 		filename: "tinymist-x86_64-unknown-linux-musl.tar.gz",
 		binaries: []string{"tinymist"}, license: "Apache-2.0",
 	},
@@ -101,7 +101,7 @@ var artifacts = []artifactSpec{
 		binaries: []string{"websocat"}, license: "MIT",
 	},
 	{
-		repository: "simoarpe/ziggity", version: "v0.54.0",
+		repository: "simoarpe/ziggity", version: "v0.59.0",
 		filename: "ziggity-{version}-x86_64-linux-musl.tar.gz",
 		binaries: []string{"ziggity"}, license: "MIT",
 	},

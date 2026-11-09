@@ -66,9 +66,9 @@
     },
     {
       "repository": "tree-sitter/tree-sitter",
-      "version": "v0.27.1",
-      "url": "https://github.com/tree-sitter/tree-sitter/releases/download/v0.27.1/tree-sitter-linux-x64.gz",
-      "sha256": "d01042f94ba3d6827ddc9788e235f75d8366431be42bdf90ade534d960c98b7d",
+      "version": "v0.27.2",
+      "url": "https://github.com/tree-sitter/tree-sitter/releases/download/v0.27.2/tree-sitter-linux-x64.gz",
+      "sha256": "7ed56d152c52437397b9fcaa43cf341f49933cecc1ca291843f0d347c6e2cb3a",
       "binaries": [
         "tree-sitter"
       ],
@@ -117,9 +117,9 @@
     },
     {
       "repository": "tekumara/typos-lsp",
-      "version": "v0.1.57",
-      "url": "https://github.com/tekumara/typos-lsp/releases/download/v0.1.57/typos-lsp-v0.1.57-x86_64-unknown-linux-musl.tar.gz",
-      "sha256": "8ef0418f6201e845383ee31be74da8691dec5d9f64554aee5d5befe8fda9d5cd",
+      "version": "v0.1.58",
+      "url": "https://github.com/tekumara/typos-lsp/releases/download/v0.1.58/typos-lsp-v0.1.58-x86_64-unknown-linux-musl.tar.gz",
+      "sha256": "c25cfe09258dfa9c759727f75269eaee940741fffb18826f66b5787b93f19550",
       "binaries": [
         "typos-lsp"
       ],
@@ -127,9 +127,9 @@
     },
     {
       "repository": "Myriad-Dreamin/tinymist",
-      "version": "v0.15.10",
-      "url": "https://github.com/Myriad-Dreamin/tinymist/releases/download/v0.15.10/tinymist-x86_64-unknown-linux-musl.tar.gz",
-      "sha256": "91f016615d106fe4678a80e087b083eca91bba5e5da8c1b5f8ba411e81e37278",
+      "version": "v0.15.12",
+      "url": "https://github.com/Myriad-Dreamin/tinymist/releases/download/v0.15.12/tinymist-x86_64-unknown-linux-musl.tar.gz",
+      "sha256": "bb9c73151dd16864f5bb2c426aa990de424985969bea54b5c4a7d5373cedcab2",
       "binaries": [
         "tinymist"
       ],
@@ -157,9 +157,9 @@
     },
     {
       "repository": "simoarpe/ziggity",
-      "version": "v0.54.0",
-      "url": "https://github.com/simoarpe/ziggity/releases/download/v0.54.0/ziggity-v0.54.0-x86_64-linux-musl.tar.gz",
-      "sha256": "2387eb879f5119023b6e545dda1ff1346180bbe03e8aec87986699a78c1b6068",
+      "version": "v0.59.0",
+      "url": "https://github.com/simoarpe/ziggity/releases/download/v0.59.0/ziggity-v0.59.0-x86_64-linux-musl.tar.gz",
+      "sha256": "f26a519227eeae3516f0b2c09318c025bdc063064c84e06626ace9b6c192ebbc",
       "binaries": [
         "ziggity"
       ],
