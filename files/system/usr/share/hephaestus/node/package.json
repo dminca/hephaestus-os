@@ -7,10 +7,10 @@
     "node": "^24.11.0",
     "npm": "^11.0.0"
   },
-  "packageManager": "npm@11.21.1",
+  "packageManager": "npm@11.21.2",
   "dependencies": {
-    "@biomejs/biome": "2.6.4",
-    "@mermaid-js/mermaid-cli": "12.0.0",
+    "@biomejs/biome": "2.6.6",
+    "@mermaid-js/mermaid-cli": "12.2.0",
     "@tailwindcss/language-server": "0.16.0",
     "bash-language-server": "5.8.1",
     "emmet-ls": "0.4.2",
