@@ -5,8 +5,8 @@
     "node": "^24.15.0",
     "npm": "^11.0.0"
   },
-  "packageManager": "npm@11.21.1",
+  "packageManager": "npm@11.21.2",
   "dependencies": {
-    "renovate": "44.226.3"
+    "renovate": "44.227.0"
   }
 }
