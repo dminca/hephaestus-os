@@ -39,7 +39,7 @@ var artifacts = []artifactSpec{
 		binaries: []string{"websocat"}, license: "MIT",
 	},
 	{
-		repository: "simoarpe/ziggity", version: "v0.54.0",
+		repository: "simoarpe/ziggity", version: "v0.61.0",
 		filename: "ziggity-{version}-x86_64-linux-musl.tar.gz",
 		binaries: []string{"ziggity"}, license: "MIT",
 	},
