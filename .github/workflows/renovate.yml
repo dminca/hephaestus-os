@@ -69,6 +69,7 @@ jobs:
       - name: Run Renovate
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          LOG_LEVEL: debug
           RENOVATE_CONFIG_FILE: .github/renovate-global.js
           RENOVATE_TOKEN: ${{ steps.app-token.outputs.token }}
         run: .github/renovate/node_modules/.bin/renovate

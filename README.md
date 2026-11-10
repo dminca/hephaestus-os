@@ -194,6 +194,14 @@ For default-branch Git digest tracking, omit the custom manager's
 `currentValueTemplate`; an explicit `HEAD` is treated as a named branch/tag by
 Renovate's `git-refs` digest lookup and cannot resolve the default branch.
 
+The Renovate job logs at debug level and propagates repository errors to CI.
+If its own upgrade fails with npm `ERESOLVE`, update the exact Renovate version
+in `.github/renovate/package.json` and regenerate the adjacent lock with
+`npm install --package-lock-only --ignore-scripts` from that directory.
+Keep the existing lock as the starting point: Renovate's automated update can
+remove its package entry while retaining incompatible old transitive peers.
+Commit the manifest and regenerated lock together; keep strict peer checks enabled.
+
 ### Where to put dependency tests
 
 | Behavior | Test location |

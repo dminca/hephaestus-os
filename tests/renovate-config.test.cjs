@@ -3,6 +3,11 @@ const { spawnSync } = require("node:child_process");
 const path = require("node:path");
 const { test } = require("node:test");
 
+test("Renovate fails CI when a repository run fails", () => {
+  const config = require("../.github/renovate-global.js");
+  assert.equal(config.exitCodeForErrors, true);
+});
+
 test("Renovate forwards GitHub authentication to post-upgrade lock tools", () => {
   const configPath = path.resolve(__dirname, "../.github/renovate-global.js");
   const result = spawnSync(
