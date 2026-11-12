@@ -5,7 +5,7 @@ const { pathToFileURL } = require("node:url");
 const { before, test } = require("node:test");
 const { root, renovateRequire } = require("./helpers.cjs");
 const semver = renovateRequire("semver");
-const config = JSON.parse(readFileSync(path.join(root, "renovate.json5"), "utf8"));
+const config = renovateRequire("json5").parse(readFileSync(path.join(root, "renovate.json5"), "utf8"));
 const renovateRoot = path.dirname(renovateRequire.resolve("renovate/package.json"));
 const load = (file) => import(pathToFileURL(path.join(renovateRoot, "dist", file)));
 
