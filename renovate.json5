@@ -4,7 +4,9 @@
   "enabledManagers": ["npm", "gomod", "github-actions", "custom.regex"],
   "schedule": ["before 7am on Monday"],
   "timezone": "UTC",
-  "dependencyDashboard": true,
+  "dependencyDashboard": {
+    "enabled": true,
+  },
   "automerge": false,
   "prConcurrentLimit": 4,
   "prHourlyLimit": 0,
