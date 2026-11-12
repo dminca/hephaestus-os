@@ -34,7 +34,7 @@ var artifacts = []artifactSpec{
 		binaries: []string{"yazi", "ya"}, license: "MIT",
 	},
 	{
-		repository: "vi/websocat", version: "v1.14.1",
+		repository: "vi/websocat", version: "v1.14.2",
 		filename: "websocat.x86_64-unknown-linux-musl",
 		binaries: []string{"websocat"}, license: "MIT",
 	},
@@ -49,7 +49,7 @@ var artifacts = []artifactSpec{
 		binaries: []string{"witr"}, license: "MIT",
 	},
 	{
-		repository: "modem-dev/hunk", version: "v0.24.1",
+		repository: "modem-dev/hunk", version: "v0.25.0",
 		filename: "hunkdiff-linux-x64.tar.gz",
 		binaries: []string{"hunk"}, license: "MIT",
 	},
