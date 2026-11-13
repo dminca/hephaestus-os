@@ -14,6 +14,8 @@ export XDG_STATE_HOME="$HOME/.local/state"
 export PUPPETEER_SKIP_DOWNLOAD=true
 mkdir -p "$HOME"
 
+nvim --headless -u NONE '+lua if vim.fn.has("nvim-0.12") ~= 1 then io.stderr:write("Hephaestus requires Neovim 0.12+ with vim.pack\n"); vim.cmd("cquit") end' +qa
+
 rpm -q git-credential-libsecret
 credential_helper="$(git --exec-path)/git-credential-libsecret"
 if [[ ! -x "$credential_helper" ]]; then

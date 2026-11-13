@@ -102,8 +102,9 @@ func TestProfile(t *testing.T) {
 			}
 		}
 		for destination, origin := range map[string]string{
-			".zshrc": "zshrc", ".config/nvim": "config/nvim",
-			".tmux.conf": "config/tmux/tmux.conf", ".config/tmux": "config/tmux",
+			".zshrc": "zshrc", ".config/nvim/init.lua": "config/nvim/init.lua",
+			".config/nvim/lua": "config/nvim/lua",
+			".tmux.conf":       "config/tmux/tmux.conf", ".config/tmux": "config/tmux",
 		} {
 			got, err := filepath.EvalSymlinks(filepath.Join(home, destination))
 			if err != nil {
@@ -213,7 +214,7 @@ printf '%s\n' '{"name":"Demo Name","email":"demo@example.invalid"}'
 		}
 		assertBackup(t, filepath.Join(home, ".zshrc.hephaestus-backup.*"), "", "existing configuration\n")
 		assertBackup(t, filepath.Join(home, ".gitconfig.hephaestus-backup.*"), "", "[alias]\n\tst = status\n")
-		assertBackup(t, filepath.Join(home, ".config/nvim.hephaestus-backup.*"), "init.lua", "-- existing editor\n")
+		assertBackup(t, filepath.Join(home, ".config/nvim/init.lua.hephaestus-backup.*"), "", "-- existing editor\n")
 	})
 
 	t.Run("SymlinkedConfigParentIsRejected", func(t *testing.T) {

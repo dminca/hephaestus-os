@@ -6,32 +6,6 @@ vim.treesitter.language.register("json", "jsonc")
 require("hephaestus.options")
 require("hephaestus.mappings")
 
-local lazy = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
-if vim.fn.isdirectory(lazy) == 0 then
-  local result = vim.system({
-    "git", "clone", "--filter=blob:none", "--branch=stable",
-    "https://github.com/folke/lazy.nvim.git", lazy,
-  }, { text = true }):wait()
-  if result.code ~= 0 then
-    vim.notify("Could not install lazy.nvim:\n" .. (result.stderr or "")
-      .. "\nRestart Neovim to retry.", vim.log.levels.ERROR)
-    return
-  end
-end
-vim.opt.runtimepath:prepend(lazy)
-local lock = vim.fn.stdpath("state") .. "/lazy-lock.json"
-if vim.fn.filereadable(lock) == 0 then
-  vim.fn.mkdir(vim.fn.stdpath("state"), "p")
-  local seed = vim.fn.readfile(config .. "/lazy-lock.json")
-  assert(vim.fn.writefile(seed, lock) == 0, "Could not seed user plugin lock: " .. lock)
-end
-require("lazy").setup(require("hephaestus.plugins"), {
-  lockfile = lock,
-  defaults = { lazy = false },
-  install = { missing = true },
-  checker = { enabled = false },
-  change_detection = { enabled = false },
-  pkg = { enabled = false },
-  rocks = { enabled = false },
-  performance = { rtp = { reset = false } },
-})
+assert(vim.fn.has("nvim-0.12") == 1, "Hephaestus requires Neovim 0.12+ with vim.pack")
+require("hephaestus.packages").setup()
+require("hephaestus.plugins")

@@ -19,6 +19,27 @@
   "customManagers": [
     {
       "customType": "regex",
+      "description": "Track native Neovim plugin revisions",
+      "managerFilePatterns": ["files/system/usr/share/hephaestus/profile/config/nvim/lua/hephaestus/packages.lua"],
+      "matchStrings": [
+        "src = \"https://github\\.com/(?<depName>[^\"]+)\"[^\\n]*version = \"(?<currentDigest>[a-f0-9]{40})\"[^\\n]*?(?:-- branch: (?<currentValue>[^\\s]+)|\\n)"
+      ],
+      "datasourceTemplate": "git-refs",
+      "packageNameTemplate": "https://github.com/{{{depName}}}",
+      "versioningTemplate": "git"
+    },
+    {
+      "customType": "regex",
+      "description": "Track native Neovim plugin releases",
+      "managerFilePatterns": ["files/system/usr/share/hephaestus/profile/config/nvim/lua/hephaestus/packages.lua"],
+      "matchStrings": [
+        "src = \"https://github\\.com/(?<depName>[^\"]+)\"[^\\n]*version = \"(?<currentValue>v[0-9][^\"]*)\""
+      ],
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
       "description": "Track binary release catalog versions",
       "managerFilePatterns": ["tools/lock-binaries/main.go"],
       "matchStrings": [
@@ -63,6 +84,21 @@
     }
   ],
   "packageRules": [
+    {
+      "matchFileNames": ["files/system/usr/share/hephaestus/profile/config/nvim/lua/hephaestus/packages.lua"],
+      "groupName": "Neovim plugins"
+    },
+    {
+      "description": "Keep compatibility holds explicit; release changes need review",
+      "matchFileNames": ["files/system/usr/share/hephaestus/profile/config/nvim/lua/hephaestus/packages.lua"],
+      "matchPackageNames": ["niksingh710/leetcode.nvim", "nvim-treesitter/nvim-treesitter"],
+      "enabled": false
+    },
+    {
+      "matchFileNames": ["files/system/usr/share/hephaestus/profile/config/nvim/lua/hephaestus/packages.lua"],
+      "matchPackageNames": ["saghen/blink.cmp"],
+      "dependencyDashboardApproval": true
+    },
     {
       "matchFileNames": ["tools/lock-binaries/main.go"],
       "groupName": "Pinned binary releases",

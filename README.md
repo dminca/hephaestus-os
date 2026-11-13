@@ -86,40 +86,68 @@ Builds verify system-tool downloads against the locked checksums.
 
 ## Neovim: first launch and maintenance
 
-Launch `nvim` normally with an internet connection. Missing plugins, language
-servers, formatters, and parsers install automatically in your user account.
-Most plugins are Lua; Mason and plugin build hooks use upstream prebuilt
-releases where supported. Treesitter still compiles native parsers locally,
-asynchronously, using the compiler and tools supplied by the image.
+This is a Secureblue/Fedora Atomic configuration, not a NixOS configuration.
+The image supplies **Neovim 0.12+**, Git, compilers and runtime prerequisites;
+`vim.pack` manages plugins and native `vim.lsp` manages language-server
+activation. `nvim-lspconfig` supplies server definitions, not a second LSP
+client. The design follows the native APIs used by
+[craftzdog/dotfiles](https://github.com/craftzdog/dotfiles/tree/master/dot_config/nvim),
+while preserving Hephaestus options, mappings and plugin settings.
 
-Basic editing remains available while tools install. Language-specific features
-become available as their dependencies finish; reopen a buffer if its language
-server has not attached yet. There are no automatic plugin or tool upgrades on
-every launch.
+After deploying the new image, run `hephaestus-profile`. When migrating from
+the old whole-directory Neovim symlink (or conflicting personal files), run
+`hephaestus-profile --replace` instead: it keeps timestamped backups before
+activation. `~/.config/nvim` is now a writable directory containing image-backed
+`init.lua` and `lua` symlinks, leaving room for the native user-owned lockfile.
+`XDG_CONFIG_HOME` is respected.
+
+Launch `nvim` with an internet connection. Missing plugins install synchronously
+before their setup functions run. Mason installs missing language servers and
+formatters asynchronously through `mason-tool-installer.nvim`; all entries
+have prerequisite conditions. For example, Go tools need `go`, Node packages
+need `node` and `npm`, `nil` needs Cargo/Rust/C, and Haskell needs GHCup and GHC.
+Missing prerequisites produce warnings rather than failed blind installations.
+Nix-language editing support does not make the host NixOS: downloaded tools use
+normal platform defaults, without NixOS targets or compatibility wrappers.
+
+Treesitter compiles parsers locally and asynchronously using image-supplied
+tools. LSP clients are enabled only when the executable and prerequisites are
+available, including after Mason completes installation. Rust attachment stays
+owned by rustaceanvim. There are no network upgrades on every launch: Renovate
+proposes plugin pin changes; Mason tools and parsers have explicit update commands.
 
 | Task | Neovim command |
 |---|---|
-| Inspect plugin installation; retry a failed build | `:Lazy`, then select the plugin and press `gb` |
-| Install missing plugins | `:Lazy install` |
-| Deliberately update plugins | `:Lazy update` |
-| Return plugins to the user lock | `:Lazy restore` |
+| Install missing plugins | Restart `nvim` |
+| Inspect installed plugins | `:lua vim.print(vim.pack.get())` |
+| Apply the image's reviewed plugin pins | `:lua vim.pack.update()`; review the buffer and `:write` to confirm, then restart |
+| Return plugins to the user lock | `:lua vim.pack.update(nil, { offline = true, target = "lockfile" })`; review and `:write` |
 | Inspect language servers and formatters | `:Mason` |
 | Retry missing configured tools | `:MasonToolsInstall` |
+| Deliberately update configured tools | `:MasonToolsUpdate` |
 | Install a specific language server | `:MasonInstall lua-language-server` |
 | Update installed parsers | `:TSUpdate` |
 | Retry a missing parser | `:TSInstall lua` (replace `lua` with its language) |
 | Inspect installation failures | `:messages`, `:MasonLog`, `:checkhealth` |
 
-The image's read-only configuration is linked into `~/.config/nvim`.
-Plugins live in `stdpath("data")/lazy`, Mason tools in
+Plugins live in `stdpath("data")/site/pack/core/opt`, Mason tools in
 `stdpath("data")/mason`, and parsers in `stdpath("data")/site`.
-The configuration seeds `stdpath("state")/lazy-lock.json` once from the checked-in
-native lazy.nvim lock. Subsequent launches and image updates preserve your
-user lock. These paths normally resolve under `~/.local/share/nvim` and
-`~/.local/state/nvim`, respectively.
+Neovim generates `stdpath("config")/nvim-pack-lock.json`, normally
+`~/.config/nvim/nvim-pack-lock.json`. Subsequent launches, profile activation
+and image updates preserve that native lock. The old `data/lazy` tree and
+`state/lazy-lock.json` are no longer used and are not deleted automatically.
+Save a copy of the native lock before updating if you need to roll back editor
+revisions; an OS rollback alone does not roll back user dependencies.
 
 Markdown preview, Typst preview, CodeSnap, and Cord use their plugin-managed
-installation hooks rather than custom image builds. YAML formatting uses the
+installers rather than custom image builds. `PackChanged` runs CodeSnap's
+`make` and Markdown Preview's installer on install/update and refreshes parsers
+on Treesitter updates. To retry a CodeSnap build, run `make` in its plugin
+directory; for Markdown Preview, run `:call mkdp#util#install_sync()`.
+Kulala's HTTP parser setup waits until Mason's `tree-sitter` executable is
+available, then configures automatically; opening an HTTP buffer before that
+shows a warning instead of attempting a broken parser build.
+YAML formatting uses the
 YAML language server through Conform's existing LSP formatting preference;
 there is no separate Python formatter environment. Rust language-server
 attachment remains owned by rustaceanvim, not a second Mason LSP client.
@@ -142,8 +170,8 @@ repair them. Editor updates are managed separately in the user account.
 | System Mermaid CLI | `files/system/usr/share/hephaestus/node/package.json` | Adjacent `package-lock.json` |
 | Renovate itself | `.github/renovate/package.json` | Adjacent `package-lock.json` |
 | `fd` | `files/scripts/install-fd.sh` and the pinned BlueBuild Brew module | Installed from Homebrew during image build, smoke-checked, and copied into `/usr/libexec/hephaestus/bin` |
-| Neovim plugins | `profile/config/nvim/lua/hephaestus/plugins.lua` under assets | Native `profile/config/nvim/lazy-lock.json` seed; user-managed state lock |
-| Editor servers and formatters | Mason lists in `plugins.lua` and `languages.lua` | User-owned Mason installation |
+| Neovim plugins | Native specs/pins in `profile/config/nvim/lua/hephaestus/packages.lua`; settings in `plugins.lua` | User-owned `~/.config/nvim/nvim-pack-lock.json` |
+| Editor servers and formatters | Mason registry names and prerequisite conditions in `tools.lua`; native LSP settings in `languages.lua` | User-owned Mason installation |
 | Treesitter parsers | Language list in `profile/config/nvim/lua/hephaestus/treesitter.lua` | User-owned parser libraries |
 | Release binaries | `tools/lock-binaries/main.go` | `binaries.lock.json`, regenerated by `go run ./tools/lock-binaries` |
 | BlueBuild tooling | `recipes/recipe.yml` and the workflow's `cli_version` | Explicit CLI version, module and Nushell image digests |
@@ -180,11 +208,14 @@ same commands in `.github/renovate` instead. For editor tools, add the Mason
 package to the corresponding plugin configuration and test it from Neovim;
 do not add a second image installer.
 
-To deliberately refresh the shared plugin seed, test the plugins after
-`:Lazy update`, then copy the native user lock into
-`files/system/usr/share/hephaestus/profile/config/nvim/lazy-lock.json`.
-Held plugin revisions remain explicit in `plugins.lua`. Existing users retain
-their own lock rather than having updates forced by the new image.
+Renovate tracks native plugin commit pins with `git-refs` and release pins with
+`github-releases`. Harpoon tracks `harpoon2`; other revision pins follow the
+upstream default branch. The existing LeetCode and Treesitter compatibility
+holds remain excluded from automatic PRs, and Blink requires dashboard approval.
+After deploying a reviewed plugin update, use `vim.pack.update()` and restart.
+Existing plugin checkouts are not silently changed just because the image changed.
+Mason tools are intentionally unpinned and updated with `:MasonToolsUpdate`;
+Renovate cannot update mutable user installations or Treesitter-generated parsers.
 
 Native Renovate managers own system npm and repository Go metadata.
 Custom managers cover binary releases, Flow Desktop, and BlueBuild
@@ -228,7 +259,7 @@ node --test tests/renovate-config.test.cjs tests/dependencies/*.test.cjs
 
 Install both locked npm projects first. Neovim fixture tests require Neovim
 locally and skip when it is unavailable. For a real user-editor smoke check,
-use isolated HOME/XDG directories with Neovim 0.11 or newer:
+use isolated HOME/XDG directories with Neovim 0.12 or newer:
 
 ```bash
 HEPHAESTUS_REPO="$PWD" nvim --headless -u NONE -l "$PWD/tests/check-neovim.lua"
@@ -236,7 +267,10 @@ HEPHAESTUS_REPO="$PWD" nvim --headless -u NONE -l "$PWD/tests/check-neovim.lua"
 
 This starts plugin installation if needed and requires network access on a
 fresh account. Wait for installation to finish and retry after any reported
-tool error. It is not part of the image build. CI checks the repository,
+tool error. It is not part of the image build. CI installs stable Neovim
+to run the Lua fixture tests rather than skipping them. The image build
+checks the Fedora Neovim RPM for 0.12+ without provisioning any plugins.
+CI checks the repository,
 remaining system dependencies, and Renovate policy before building the image;
 it no longer duplicates editor tool provisioning or runs an eight-cell Node
 matrix.
