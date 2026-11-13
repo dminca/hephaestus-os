@@ -44,6 +44,12 @@ do not use `hunk update` to modify the immutable image installation.
 
 ## Desktop preferences
 
+The image includes JetBrainsMono Nerd Font for all users. Select
+`JetBrainsMono Nerd Font` in your terminal or application font settings after
+deploying the image. Its release and SHA-256 are pinned in
+`files/scripts/install-jetbrains-mono-nerd-font.sh`; update both together when
+upgrading the font.
+
 On the first Plasma login after deploying the image, a native Plasma update script
 enables seconds on existing digital clock widgets and maps Caps Lock to Escape.
 Other widgets, keyboard layouts, and unrelated XKB options are preserved.

@@ -75,6 +75,7 @@ modules:
     source: ghcr.io/blue-build/modules/script:latest@sha256:d6076360da9195e2a6d781043a1b049bede3d2389757912a828a957bc78929b8
     scripts:
       - install-flow-desktop.sh
+      - install-jetbrains-mono-nerd-font.sh
       - install-profile.sh
       - install-fd.sh
 
