@@ -81,6 +81,63 @@ func TestPrivateIdentityRestoration(t *testing.T) {
 	}
 }
 
+func TestNeovimConfigIsWritableAndPreservesLock(t *testing.T) {
+	for _, previous := range []string{"fresh", "managed-link", "personal-link", "file"} {
+		t.Run(previous, func(t *testing.T) {
+			source, home := profileFixture(t)
+			destination := filepath.Join(home, ".config/nvim")
+			switch previous {
+			case "managed-link", "personal-link":
+				target := filepath.Join(source, "config/nvim")
+				if previous == "personal-link" {
+					target = t.TempDir()
+				}
+				if err := os.Symlink(target, destination); err != nil {
+					t.Fatal(err)
+				}
+			case "file":
+				if err := os.WriteFile(destination, []byte("personal"), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if previous != "fresh" {
+				if err := activateProfile(source, false); err == nil {
+					t.Fatal("migration must require --replace before backing up existing config")
+				}
+			}
+			if err := activateProfile(source, true); err != nil {
+				t.Fatal(err)
+			}
+			info, err := os.Lstat(destination)
+			if err != nil || !info.IsDir() {
+				t.Fatalf("Neovim config must be a writable directory: %v (%v)", info, err)
+			}
+			lock := filepath.Join(destination, "nvim-pack-lock.json")
+			if err := os.WriteFile(lock, []byte("user-lock"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			if err := activateProfile(source, false); err != nil {
+				t.Fatal(err)
+			}
+			content, err := os.ReadFile(lock)
+			if err != nil || string(content) != "user-lock" {
+				t.Fatal("activation changed the user lock")
+			}
+			target, err := os.Readlink(filepath.Join(destination, "init.lua"))
+			want, resolveErr := filepath.EvalSymlinks(filepath.Join(source, "config/nvim/init.lua"))
+			if err != nil || resolveErr != nil || target != want {
+				t.Fatalf("init.lua link = %q (%v)", target, err)
+			}
+			if previous != "fresh" {
+				backups, err := filepath.Glob(destination + ".hephaestus-backup.*")
+				if err != nil || len(backups) != 1 {
+					t.Fatalf("migration backup = %v (%v)", backups, err)
+				}
+			}
+		})
+	}
+}
+
 func TestIdentityValidation(t *testing.T) {
 	for _, payload := range []string{
 		`{}`, `null`, `[]`, `{"name":"","email":"x"}`,

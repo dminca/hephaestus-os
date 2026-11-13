@@ -1,3 +1,14 @@
+local commands = {
+  biome = { "biome", "lsp-proxy" },
+  cssls = { "vscode-css-language-server", "--stdio" },
+  eslint = { "vscode-eslint-language-server", "--stdio" },
+  html = { "vscode-html-language-server", "--stdio" },
+  jsonls = { "vscode-json-language-server", "--stdio" },
+  svelte = { "svelteserver", "--stdio" },
+  tailwindcss = { "tailwindcss-language-server", "--stdio" },
+  ts_ls = { "typescript-language-server", "--stdio" },
+  yamlls = { "yaml-language-server", "--stdio" },
+}
 local servers = {
   gopls = { settings = { gopls = {
     gofumpt = true, usePlaceholders = true, completeUnimported = true,
@@ -19,12 +30,36 @@ local servers = {
   } } },
 }
 for name, config in pairs(servers) do
+  config.cmd = commands[name]
   config.capabilities = require("blink.cmp").get_lsp_capabilities()
   vim.lsp.config(name, config)
 end
-local installed = vim.tbl_keys(servers)
-table.sort(installed)
-require("mason-lspconfig").setup({ ensure_installed = installed, automatic_enable = installed })
+local tools = require("hephaestus.tools")
+local function enable_ready()
+  for name in pairs(servers) do
+    local config = vim.lsp.config[name]
+    assert(type(config.cmd) == "table" and type(config.cmd[1]) == "string",
+      "Expected an executable command in the native LSP definition for " .. name)
+    if tools.ready(assert(tools.servers[name], "Missing Mason package for " .. name))
+      and vim.fn.executable(config.cmd[1]) == 1 then
+      vim.lsp.enable(name)
+    end
+  end
+  if tools.ready(tools.servers.rust_analyzer) and vim.fn.executable("rust-analyzer") == 1 then
+    for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+      if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == "rust"
+        and #vim.lsp.get_clients({ bufnr = buf, name = "rust-analyzer" }) == 0 then
+        require("rustaceanvim.lsp").start(buf)
+      end
+    end
+  end
+end
+vim.api.nvim_create_autocmd("User", {
+  pattern = "MasonToolsUpdateCompleted", callback = function() vim.schedule(enable_ready) end,
+})
+require("mason-registry"):on("package:install:success", function() vim.schedule(enable_ready) end)
+tools.setup()
+enable_ready()
 vim.api.nvim_create_autocmd("LspAttach", {
   callback = function(event)
     local client = vim.lsp.get_client_by_id(event.data.client_id)

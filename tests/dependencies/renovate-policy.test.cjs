@@ -51,6 +51,37 @@ test("custom managers extract every BlueBuild module digest", async () => {
   for (const dep of images.deps) assert.match(dep.currentDigest, /^sha256:[a-f0-9]{64}$/);
 });
 
+test("native Neovim plugins have update coverage with compatibility holds", async () => {
+  const { extractPackageFile } = await load("modules/manager/custom/regex/index.js");
+  const { applyPackageRules } = await load("util/package-rules/index.js");
+  const filename = "files/system/usr/share/hephaestus/profile/config/nvim/lua/hephaestus/packages.lua";
+  const content = readFileSync(path.join(root, filename), "utf8");
+  const revisions = config.customManagers.find((manager) => manager.description === "Track native Neovim plugin revisions");
+  const releases = config.customManagers.find((manager) => manager.description === "Track native Neovim plugin releases");
+  const deps = [
+    ...extractPackageFile(content, filename, revisions).deps,
+    ...extractPackageFile(content, filename, releases).deps,
+  ];
+  assert.equal(deps.length, (content.match(/src = "https:\/\/github.com\//g) || []).length);
+  assert.equal(new Set(deps.map((dep) => dep.depName)).size, deps.length);
+  for (const dep of deps) {
+    const resolved = await applyPackageRules({
+      ...dep, manager: "custom.regex", packageName: dep.depName,
+      packageFile: filename, updateType: dep.currentDigest ? "digest" : "patch",
+      packageRules: config.packageRules,
+    });
+    assert.equal(resolved.groupName, "Neovim plugins");
+    if (["niksingh710/leetcode.nvim", "nvim-treesitter/nvim-treesitter"].includes(dep.depName)) {
+      assert.equal(resolved.enabled, false);
+    } else {
+      assert.notEqual(resolved.enabled, false);
+    }
+    if (dep.depName === "ThePrimeagen/harpoon") assert.equal(dep.currentValue, "harpoon2");
+    else if (dep.currentDigest) assert.equal(dep.currentValue, undefined, "default branches must not use HEAD");
+    if (dep.depName === "saghen/blink.cmp") assert.equal(resolved.dependencyDashboardApproval, true);
+  }
+});
+
 test("BlueBuild CLI pins agree and the Nushell image includes a digest", async () => {
   const { extractPackageFile } = await load("modules/manager/custom/regex/index.js");
   const cli = config.customManagers.find((manager) => manager.description === "Track pinned BlueBuild CLI versions");

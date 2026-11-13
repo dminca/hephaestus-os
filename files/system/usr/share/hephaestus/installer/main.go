@@ -23,6 +23,7 @@ type profileLink struct {
 	conflict    bool
 	content     []byte
 	mode        os.FileMode
+	directory   bool
 }
 
 func main() {
@@ -129,6 +130,21 @@ func activateProfileWithIdentity(source string, replace bool, identity []byte) e
 		if entry.Name() == "hephaestus-private" || entry.Name() == "git" {
 			return errors.New("Profile must not contain image-backed private or Git directories")
 		}
+		if entry.Name() == "nvim" {
+			destination := filepath.Join(config, "nvim")
+			links = append(links, profileLink{destination: destination, directory: true})
+			children, err := os.ReadDir(filepath.Join(source, "config/nvim"))
+			if err != nil {
+				return err
+			}
+			for _, child := range children {
+				links = append(links, profileLink{
+					source:      filepath.Join(source, "config/nvim", child.Name()),
+					destination: filepath.Join(destination, child.Name()),
+				})
+			}
+			continue
+		}
 		links = append(links, profileLink{
 			source:      filepath.Join(source, "config", entry.Name()),
 			destination: filepath.Join(config, entry.Name()),
@@ -137,14 +153,22 @@ func activateProfileWithIdentity(source string, replace bool, identity []byte) e
 
 	// Check every destination before changing any user files.
 	var conflicts []string
+	replacedDirectories := map[string]bool{}
 	for index := range links {
 		link := &links[index]
+		if replacedDirectories[filepath.Dir(link.destination)] {
+			continue
+		}
 		destinationInfo, err := os.Lstat(link.destination)
 		if errors.Is(err, os.ErrNotExist) {
 			continue
 		}
 		if err != nil {
 			return err
+		}
+		if link.directory && destinationInfo.IsDir() {
+			link.active = true
+			continue
 		}
 		if link.mode == 0o600 && (!destinationInfo.Mode().IsRegular() || destinationInfo.Mode().Perm() != 0o600) {
 			return fmt.Errorf("Private identity must be a regular file with permissions 0600: %s", link.destination)
@@ -159,7 +183,7 @@ func activateProfileWithIdentity(source string, replace bool, identity []byte) e
 				continue
 			}
 		}
-		if destinationInfo.Mode()&os.ModeSymlink != 0 {
+		if !link.directory && destinationInfo.Mode()&os.ModeSymlink != 0 {
 			resolved, err := filepath.EvalSymlinks(link.destination)
 			if err == nil && resolved == link.source {
 				link.active = true
@@ -170,6 +194,9 @@ func activateProfileWithIdentity(source string, replace bool, identity []byte) e
 			}
 		}
 		link.conflict = true
+		if link.directory {
+			replacedDirectories[link.destination] = true
+		}
 		conflicts = append(conflicts, link.destination)
 	}
 	if len(conflicts) > 0 && !replace {
@@ -216,7 +243,11 @@ func activateProfileWithIdentity(source string, replace bool, identity []byte) e
 			}
 			fmt.Printf("Backed up %s -> %s\n", link.destination, backup)
 		}
-		if link.content != nil {
+		if link.directory {
+			if err := os.Mkdir(link.destination, 0o755); err != nil {
+				return err
+			}
+		} else if link.content != nil {
 			if err := publishFile(link.destination, link.content, link.mode); err != nil {
 				return err
 			}

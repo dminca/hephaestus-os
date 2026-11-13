@@ -63,8 +63,8 @@ func TestProfileBuildUsesUserShfmt(t *testing.T) {
 	if strings.Contains(script, "mvdan.cc/sh/v3/cmd/shfmt") {
 		t.Fatal("shfmt belongs to the user-time tool installer")
 	}
-	plugins := readFile(t, filepath.Join(repository(t), "files/system/usr/share/hephaestus/profile/config/nvim/lua/hephaestus/plugins.lua"))
-	if !strings.Contains(plugins, `"shfmt"`) || !strings.Contains(plugins, "mason-tool-installer.nvim") {
+	tools := readFile(t, filepath.Join(repository(t), "files/system/usr/share/hephaestus/profile/config/nvim/lua/hephaestus/tools.lua"))
+	if !strings.Contains(tools, `"shfmt"`) || !strings.Contains(tools, `require("mason-tool-installer")`) {
 		t.Fatal("shfmt must be managed by Mason")
 	}
 }
