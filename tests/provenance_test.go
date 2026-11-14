@@ -17,6 +17,10 @@ func TestUpdateSystemProvenanceMatchesBuild(t *testing.T) {
 		"expected_source='https://github.com/dminca/hephaestus-os'",
 		"latest)\n    branch='main'",
 		"--level 3",
+		"--require-signatures",
+		"--subject \"${digest}\"",
+		"--param \"expected_source:${expected_source}\"",
+		"--param \"expected_branch:${branch}\"",
 		"--param \"trusted_builders:[${expected_source}/.github/workflows/build.yml@refs/heads/${branch}]\"",
 	} {
 		if !strings.Contains(verifier, expected) {
@@ -36,6 +40,14 @@ func TestUpdateSystemProvenanceMatchesBuild(t *testing.T) {
 	reference := build.Jobs["provenance"].Uses
 	if !regexp.MustCompile(`^slsa-framework/actions/\.github/workflows/attest_actions\.yml@(v[0-9]+\.[0-9]+\.[0-9]+|[0-9a-f]{40})$`).MatchString(reference) {
 		t.Errorf("provenance job must use the SLSA attestation workflow at a release tag or full commit SHA, got %q", reference)
+	}
+	identity := "https://github.com/" + reference
+	if !strings.Contains(reference, "@refs/") && !regexp.MustCompile(`@[0-9a-f]{40}$`).MatchString(reference) {
+		identity = strings.Replace(identity, "@", "@refs/tags/", 1)
+	}
+	expectedSigner := "--signer 'sigstore::https://token.actions.githubusercontent.com::" + identity + "'"
+	if !strings.Contains(verifier, expectedSigner) {
+		t.Errorf("provenance verifier must trust the exact workflow identity used by CI: %s", expectedSigner)
 	}
 	for _, expected := range []string{
 		"IMAGE_REF: ${{ steps.image_manifest_metadata.outputs.IMAGE_REF }}",

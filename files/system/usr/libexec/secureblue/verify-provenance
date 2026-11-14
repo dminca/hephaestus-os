@@ -55,10 +55,11 @@ printf 'Expected source: %s@refs/heads/%s\n' "${expected_source}" "${branch}"
 tempdir=$(mktemp -d)
 trap 'rm -rf "${tempdir}"' EXIT
 oras pull -o "${tempdir}" "${image_ref%:*}:${digest/:/-}-provenance"
+# renovate: datasource=github-tags depName=slsa-framework/actions version=v0.2.0
 slsa-verifier build "${tempdir}/provenance.intoto.json" \
     --level 3 \
     --require-signatures \
-    --signer 'sigstore(identityMatch=regex)::https://token.actions.githubusercontent.com::https://github\.com/slsa-framework/actions/\.github/workflows/attest_actions\.yml@refs/tags/v[0-9]+\.[0-9]+\.[0-9]+' \
+    --signer 'sigstore::https://token.actions.githubusercontent.com::https://github.com/slsa-framework/actions/.github/workflows/attest_actions.yml@3efdf6f2112b1170cb369442620788752df11bca' \
     --subject "${digest}" \
     --param "expected_source:${expected_source}" \
     --param "expected_branch:${branch}" \
