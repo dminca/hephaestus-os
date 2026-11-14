@@ -7,6 +7,6 @@
   },
   "packageManager": "npm@11.21.2",
   "dependencies": {
-    "renovate": "44.235.3"
+    "renovate": "44.239.1"
   }
 }
