@@ -17,13 +17,13 @@ platforms:
 # you can include multiple instances of the same module
 modules:
   - type: files
-    source: ghcr.io/blue-build/modules/files:latest@sha256:c93091889e5552a25d8169f8b5ba6d2cf201fd924f342025e6f2388c1ac4a356
+    source: ghcr.io/blue-build/modules/files:latest@sha256:dd10df5923fd8e2072602fcd46f17b394302428fa2aad88248c34c6a8d01046f
     files:
       - source: system
         destination: / # copies files/system/* (* means everything inside it) into your image's root folder /
 
   - type: dnf
-    source: ghcr.io/blue-build/modules/dnf:latest@sha256:e6cffa08197dc55f2cdc9f596e5bae6af4dc82e8a33884ff5a4edccc251b0218
+    source: ghcr.io/blue-build/modules/dnf:latest@sha256:bbbc7755ce64b2a40d7cd4c0c974641d109e3959ff001d88cd5b746b1349ee59
     install:
       packages:
         - zsh
@@ -69,10 +69,10 @@ modules:
         - gstreamer1
         - gstreamer1-plugin-libav
   - type: brew
-    source: ghcr.io/blue-build/modules/brew:latest@sha256:ace50a5f0afa9af9e5c4c96fe40a0dfdb786cc717c1df9cbf5dcacdb5ed33bb5
+    source: ghcr.io/blue-build/modules/brew:latest@sha256:c60db94644b437cf57d689405df56f80fe24ba1094dd67703f07ee1b96c99ef7
     brew-analytics: false
   - type: script
-    source: ghcr.io/blue-build/modules/script:latest@sha256:d6076360da9195e2a6d781043a1b049bede3d2389757912a828a957bc78929b8
+    source: ghcr.io/blue-build/modules/script:latest@sha256:7c53921aee3ea68f91edacccac13f793ec63424d1376b0b0c8b1c0b56eca5b4c
     scripts:
       - install-flow-desktop.sh
       - install-jetbrains-mono-nerd-font.sh
@@ -80,7 +80,7 @@ modules:
       - install-fd.sh
 
   - type: default-flatpaks@v2
-    source: ghcr.io/blue-build/modules/default-flatpaks:v2@sha256:9a57a74188d54cd717520a6c434ddfa41346f769b48bbb3bbf418538180f8397
+    source: ghcr.io/blue-build/modules/default-flatpaks:v2@sha256:794205d13ab32454027a8d22753fe8224fbbc6dd206927df152a4fe56634e40c
     configurations:
       - scope: system
         notify: true
@@ -91,4 +91,4 @@ modules:
           - com.nextcloud.desktopclient.nextcloud
 
   - type: signing # this sets up the proper policy & signing files for signed images to work fully
-    source: ghcr.io/blue-build/modules/signing:latest@sha256:6227e5ac294e9b60a77836775700df879d8a39b184ca3e511edf73cc58f1f4a6
+    source: ghcr.io/blue-build/modules/signing:latest@sha256:e39c874a0d41d41198fe608ba23bd7dc98305ea79003fbecc757e176bdad5eb1
