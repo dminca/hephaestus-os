@@ -19,6 +19,16 @@
   "customManagers": [
     {
       "customType": "regex",
+      "description": "Track the SLSA provenance signer release and workflow digest",
+      "managerFilePatterns": ["files/system/usr/libexec/secureblue/verify-provenance"],
+      "matchStrings": [
+        "# renovate: datasource=github-tags depName=slsa-framework/actions version=(?<currentValue>v[0-9.]+)\\s+slsa-verifier build[\\s\\S]*?--signer 'sigstore::https://token\\.actions\\.githubusercontent\\.com::https://github\\.com/slsa-framework/actions/\\.github/workflows/attest_actions\\.yml@(?<currentDigest>[a-f0-9]{40})'"
+      ],
+      "depNameTemplate": "slsa-framework/actions",
+      "datasourceTemplate": "github-tags"
+    },
+    {
+      "customType": "regex",
       "description": "Track native Neovim plugin revisions",
       "managerFilePatterns": ["files/system/usr/share/hephaestus/profile/config/nvim/lua/hephaestus/packages.lua"],
       "matchStrings": [
@@ -179,6 +189,12 @@
     {
       "matchManagers": ["github-actions"],
       "groupName": "GitHub Actions versions"
+    },
+    {
+      "matchManagers": ["github-actions", "custom.regex"],
+      "matchPackageNames": ["slsa-framework/actions"],
+      "groupName": "SLSA workflow and signer",
+      "automerge": false
     },
     {
       "matchManagers": ["github-actions"],

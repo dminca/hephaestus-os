@@ -51,6 +51,44 @@ test("custom managers extract every BlueBuild module digest", async () => {
   for (const dep of images.deps) assert.match(dep.currentDigest, /^sha256:[a-f0-9]{64}$/);
 });
 
+test("SLSA workflow and signer use the same release and reviewed update group", async () => {
+  const regex = await load("modules/manager/custom/regex/index.js");
+  const actions = await load("modules/manager/github-actions/index.js");
+  const { applyPackageRules } = await load("util/package-rules/index.js");
+  const manager = config.customManagers.find((entry) =>
+    entry.description === "Track the SLSA provenance signer release and workflow digest");
+  assert.ok(manager, "the verifier signer needs Renovate coverage");
+  const filename = manager.managerFilePatterns[0];
+  const content = readFileSync(path.join(root, filename), "utf8");
+  const signer = regex.extractPackageFile(content, filename, manager);
+  assert.equal(signer.deps.length, 1);
+  const workflowFile = ".github/workflows/build.yml";
+  const workflow = await actions.extractPackageFile(
+    readFileSync(path.join(root, workflowFile), "utf8"), workflowFile, {});
+  const dependency = workflow.deps.find((dep) => dep.depName === "slsa-framework/actions");
+  assert.ok(dependency);
+  assert.equal(signer.deps[0].datasource, dependency.datasource);
+  assert.equal(signer.deps[0].currentValue, dependency.currentValue);
+  assert.equal(signer.deps[0].currentDigest, dependency.currentDigest);
+  for (const updateType of ["digest", "patch", "minor", "major"]) {
+    for (const [dep, managerName, packageFile] of [
+      [signer.deps[0], "custom.regex", filename],
+      [dependency, "github-actions", workflowFile],
+    ]) {
+      const resolved = await applyPackageRules({
+        ...dep, manager: managerName, packageName: dep.depName,
+        packageFile, updateType, packageRules: config.packageRules,
+      });
+      assert.equal(resolved.groupName, "SLSA workflow and signer");
+      assert.equal(resolved.automerge, false);
+    }
+  }
+  assert.equal(regex.extractPackageFile(
+    content.replace("slsa-framework/actions/.github/workflows/attest_actions.yml",
+      "untrusted/actions/.github/workflows/attest_actions.yml"),
+    filename, manager), null, "unrelated signer identities must not be extracted");
+});
+
 test("native Neovim plugins have update coverage with compatibility holds", async () => {
   const { extractPackageFile } = await load("modules/manager/custom/regex/index.js");
   const { applyPackageRules } = await load("util/package-rules/index.js");

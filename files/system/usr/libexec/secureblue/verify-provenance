@@ -55,6 +55,7 @@ printf 'Expected source: %s@refs/heads/%s\n' "${expected_source}" "${branch}"
 tempdir=$(mktemp -d)
 trap 'rm -rf "${tempdir}"' EXIT
 oras pull -o "${tempdir}" "${image_ref%:*}:${digest/:/-}-provenance"
+# renovate: datasource=github-tags depName=slsa-framework/actions version=v0.2.0
 slsa-verifier build "${tempdir}/provenance.intoto.json" \
     --level 3 \
     --require-signatures \
