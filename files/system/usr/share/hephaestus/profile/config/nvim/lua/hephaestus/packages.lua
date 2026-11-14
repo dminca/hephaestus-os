@@ -58,7 +58,7 @@ M.specs = {
   { src = "https://github.com/iamcco/markdown-preview.nvim", version = "a923f5fc5ba36a3b17e289dc35dc17f66d0548ee" },
   { src = "https://github.com/MeanderingProgrammer/render-markdown.nvim", version = "8801162e041e34c64d0d1397cd1f353a14b01950" },
   { src = "https://github.com/ellisonleao/glow.nvim", version = "5d5954b2f22e109d4a6eba8b2618c5b96e4ee7a2" },
-  { src = "https://github.com/chomosuke/typst-preview.nvim", version = "1c2e19486397be1c580b560fc50ee36abe329c46" },
+  { src = "https://github.com/chomosuke/typst-preview.nvim", version = "b231e0e318378782b210ab57aaf7d81d3b0eea12" },
   { src = "https://github.com/mistweaverco/kulala.nvim", version = "b2c4fc8bb54c5c57aa18933b4c08f8d040f69e0b" },
   { src = "https://github.com/windwp/nvim-ts-autotag", version = "d7220b55e16ed3c04e88086256def5d282429493" },
   { src = "https://github.com/folke/ts-comments.nvim", version = "a59d6092213447450191122c9346f309161504cb" },
