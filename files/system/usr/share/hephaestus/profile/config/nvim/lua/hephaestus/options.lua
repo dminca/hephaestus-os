@@ -43,7 +43,7 @@ vim.diagnostic.config({
 })
 local group = vim.api.nvim_create_augroup("Hephaestus", { clear = true })
 vim.api.nvim_create_autocmd("TextYankPost", {
-  group = group, callback = function() vim.highlight.on_yank() end,
+  group = group, callback = function() vim.hl.on_yank() end,
 })
 vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold" }, {
   group = group,
