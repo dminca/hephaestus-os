@@ -102,9 +102,8 @@ func TestProfile(t *testing.T) {
 			}
 		}
 		for destination, origin := range map[string]string{
-			".zshrc": "zshrc", ".config/nvim/init.lua": "config/nvim/init.lua",
-			".config/nvim/lua": "config/nvim/lua",
-			".tmux.conf":       "config/tmux/tmux.conf", ".config/tmux": "config/tmux",
+			".zshrc": "zshrc", ".config/nvim": "config/nvim",
+			".tmux.conf": "config/tmux/tmux.conf", ".config/tmux": "config/tmux",
 		} {
 			got, err := filepath.EvalSymlinks(filepath.Join(home, destination))
 			if err != nil {
@@ -214,87 +213,7 @@ printf '%s\n' '{"name":"Demo Name","email":"demo@example.invalid"}'
 		}
 		assertBackup(t, filepath.Join(home, ".zshrc.hephaestus-backup.*"), "", "existing configuration\n")
 		assertBackup(t, filepath.Join(home, ".gitconfig.hephaestus-backup.*"), "", "[alias]\n\tst = status\n")
-		assertBackup(t, filepath.Join(home, ".config/nvim/init.lua.hephaestus-backup.*"), "", "-- existing editor\n")
-	})
-
-	t.Run("NeovimManagedLinkMigration", func(t *testing.T) {
-		nvim, err := exec.LookPath("nvim")
-		if err != nil {
-			t.Skip("Neovim is required for native package migration tests")
-		}
-		home := t.TempDir()
-		profile := filepath.Join(repository(t), "files/system/usr/share/hephaestus/profile")
-		config := filepath.Join(home, ".config/nvim")
-		mkdir(t, filepath.Dir(config))
-		if err := os.Symlink(filepath.Join(profile, "config/nvim"), config); err != nil {
-			t.Fatal(err)
-		}
-		bashrc := filepath.Join(home, ".bashrc")
-		writeFile(t, bashrc, "# protected bash environment\n", 0o444)
-		plugin := filepath.Join(home, "test-plugin")
-		mkdir(t, plugin)
-		for _, args := range [][]string{
-			{"init", "--quiet", plugin},
-			{"-C", plugin, "-c", "user.name=test", "-c", "user.email=test@example.invalid",
-				"commit", "--quiet", "--allow-empty", "-m", "test plugin"},
-		} {
-			if output, ok := runCommand(t, exec.Command("git", args...)); !ok {
-				t.Fatal(output)
-			}
-		}
-		driver := filepath.Join(home, "startup.lua")
-		writeFile(t, driver, `
-package.preload["hephaestus.plugins"] = function() return {} end
-package.preload["hephaestus.packages"] = function()
-  return { setup = function()
-    vim.pack.add({ { src = vim.env.HEPHAESTUS_TEST_PLUGIN } }, { confirm = false })
-  end }
-end
-local ok, err = pcall(dofile, vim.fn.stdpath("config") .. "/init.lua")
-if vim.env.HEPHAESTUS_TEST_MIGRATED == "true" then
-  assert(ok, err)
-  assert(vim.fn.filereadable(vim.fn.stdpath("config") .. "/nvim-pack-lock.json") == 1)
-  assert(#vim.pack.get(nil, { info = false }) == 1)
-else
-  assert(not ok and tostring(err):find("hephaestus%-profile %-%-replace"), tostring(err))
-end
-io.stdout:write("Native package migration passed\n")
-`, 0o600)
-		start := func(migrated string) {
-			t.Helper()
-			command := exec.Command(nvim, "--headless", "-u", "NONE", "-l", driver)
-			command.Env = append(os.Environ(), "HOME="+home,
-				"XDG_CONFIG_HOME="+filepath.Join(home, ".config"),
-				"XDG_DATA_HOME="+filepath.Join(home, ".local/share"),
-				"XDG_STATE_HOME="+filepath.Join(home, ".local/state"),
-				"XDG_CACHE_HOME="+filepath.Join(home, ".cache"),
-				"HEPHAESTUS_TEST_PLUGIN="+plugin, "HEPHAESTUS_TEST_MIGRATED="+migrated,
-				"HEPHAESTUS_ASSETS="+filepath.Dir(profile))
-			if output, ok := runCommand(t, command); !ok ||
-				!strings.Contains(output, "Native package migration passed") {
-				t.Fatalf("native package startup failed: %s", output)
-			}
-		}
-		start("false")
-		if output, ok := installProfile(t, binary, home, "--replace"); !ok {
-			t.Fatal(output)
-		}
-		start("true")
-		lock := readFile(t, filepath.Join(config, "nvim-pack-lock.json"))
-		if output, ok := installProfile(t, binary, home); !ok {
-			t.Fatal(output)
-		}
-		start("true")
-		if readFile(t, filepath.Join(config, "nvim-pack-lock.json")) != lock {
-			t.Fatal("repeat activation or startup changed the native lock")
-		}
-		if readFile(t, bashrc) != "# protected bash environment\n" {
-			t.Fatal("migration changed the protected bash environment")
-		}
-		info, err := os.Stat(bashrc)
-		if err != nil || info.Mode().Perm() != 0o444 {
-			t.Fatal("migration changed bash environment permissions")
-		}
+		assertBackup(t, filepath.Join(home, ".config/nvim.hephaestus-backup.*"), "init.lua", "-- existing editor\n")
 	})
 
 	t.Run("SymlinkedConfigParentIsRejected", func(t *testing.T) {
