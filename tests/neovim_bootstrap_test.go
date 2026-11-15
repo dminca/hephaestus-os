@@ -13,7 +13,7 @@ func TestUserPluginBootstrap(t *testing.T) {
 	if err != nil {
 		t.Skip("Neovim is required for bootstrap tests")
 	}
-	for _, mode := range []string{"fresh", "existing", "linked", "failed", "old-version"} {
+	for _, mode := range []string{"fresh", "existing", "linked", "managed-link", "failed", "old-version"} {
 		t.Run(mode, func(t *testing.T) {
 			directory := t.TempDir()
 			config := filepath.Join(repository(t), "files/system/usr/share/hephaestus/profile/config/nvim")
@@ -23,6 +23,13 @@ func TestUserPluginBootstrap(t *testing.T) {
 					t.Fatal(err)
 				}
 				config = link
+			}
+			if mode == "managed-link" {
+				xdg := filepath.Join(directory, "xdg-config")
+				mkdir(t, xdg)
+				if err := os.Symlink(config, filepath.Join(xdg, "nvim")); err != nil {
+					t.Fatal(err)
+				}
 			}
 			driver := filepath.Join(directory, "driver.lua")
 			writeFile(t, driver, `
@@ -61,6 +68,8 @@ package.preload["hephaestus.plugins"] = function() configured = true; return {} 
 local ok, err = pcall(dofile, vim.env.HEPHAESTUS_TEST_CONFIG .. "/init.lua")
 if mode == "old-version" then
   assert(not ok and tostring(err):find("requires Neovim 0.12") and not added and not configured)
+elseif mode == "managed-link" then
+  assert(not ok and tostring(err):find("hephaestus%-profile %-%-replace") and not added and not configured)
 elseif mode == "failed" then
   assert(not ok and tostring(err):find("network unavailable") and not configured)
 else
@@ -87,6 +96,7 @@ io.stdout:write("User plugin bootstrap passed\n")
 			command := exec.Command(nvim, "--headless", "-u", "NONE", "-l", driver)
 			command.Env = append(os.Environ(),
 				"HEPHAESTUS_TEST_MODE="+mode, "HEPHAESTUS_TEST_CONFIG="+config,
+				"HEPHAESTUS_ASSETS="+filepath.Join(repository(t), "files/system/usr/share/hephaestus"),
 				"XDG_CONFIG_HOME="+filepath.Join(directory, "xdg-config"),
 				"XDG_DATA_HOME="+filepath.Join(directory, "data"),
 				"XDG_STATE_HOME="+filepath.Join(directory, "state"),
