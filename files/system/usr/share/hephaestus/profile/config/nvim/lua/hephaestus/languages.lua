@@ -103,7 +103,7 @@ vim.api.nvim_create_autocmd("FileType", {
   end,
 })
 vim.keymap.set("n", "<leader>o<cr>", function()
-  local row, column = unpack(vim.api.nvim_win_get_cursor(0))
+  local row, column = table.unpack(vim.api.nvim_win_get_cursor(0))
   local line = vim.api.nvim_get_current_line()
   local start = 1
   while true do
