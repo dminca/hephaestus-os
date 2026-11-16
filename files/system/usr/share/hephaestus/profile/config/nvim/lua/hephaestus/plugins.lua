@@ -1,202 +1,167 @@
-return {
-  { "nvim-lua/plenary.nvim" },
-  { "MunifTanjim/nui.nvim" },
-  { "nvim-tree/nvim-web-devicons", opts = {} },
-  { "catppuccin/nvim", name = "catppuccin", priority = 1000, config = function()
-    require("catppuccin").setup({
-      flavour = "mocha", transparent_background = true,
-      integrations = { native_lsp = { enabled = true, underlines = {
-        errors = { "undercurl" }, hints = { "undercurl" },
-        warnings = { "undercurl" }, information = { "undercurl" },
-      } } },
-    })
-    vim.cmd.colorscheme("catppuccin")
-  end },
-  { "folke/snacks.nvim", priority = 900, config = function() require("hephaestus.snacks") end },
-  { "folke/todo-comments.nvim", opts = {} },
-  { "karb94/neoscroll.nvim", opts = {} },
-  { "mrjones2014/smart-splits.nvim", opts = {} },
-  { "christoomey/vim-tmux-navigator" },
-  { "folke/flash.nvim", opts = { modes = { char = { enabled = false } } } },
-  { "folke/which-key.nvim", opts = {
-    preset = "helix", icons = { colors = false },
-    spec = {
-      { "<leader>b", group = "buffers" }, { "<leader><Tab>", group = "tabs" },
-      { "<leader>q", group = "quit/session" }, { "<leader>i", group = "insert" },
-      { "<leader>u", group = "UI" }, { "<leader>o", group = "open" },
-      { "<leader>d", group = "diff" }, { "<leader>c", group = "quickfix" },
-      { "<leader>s", group = "search" }, { "<leader>f", group = "file/find" },
-      { "<leader>g", group = "git" }, { "<leader>gh", group = "hunks" },
-      { "<leader>l", group = "LSP" }, { "<leader>p", group = "preview" },
-      { "<leader>R", group = "HTTP requests" },
-    },
-  } },
-  { "numToStr/Comment.nvim", opts = { toggler = { line = "<leader>/" }, opleader = { line = "<leader>/" } } },
-  { "kylechui/nvim-surround", opts = {} },
-  { "windwp/nvim-autopairs", opts = {} },
-  { "cappyzawa/trim.nvim", opts = {} },
-  { "mg979/vim-visual-multi" },
-  { "arnamak/stay-centered.nvim", opts = {} },
-  { "direnv/direnv.vim" },
-  { "chrishrb/gx.nvim", opts = {}, config = function(_, opts)
-    require("gx").setup(opts)
-    vim.keymap.set({ "n", "x" }, "gx", "<cmd>Browse<cr>")
-  end },
-  { "anuvyklack/middleclass" },
-  { "anuvyklack/animation.nvim" },
-  { "anuvyklack/windows.nvim", opts = { ignore = { filetype = { "snacks_picker_list", "snacks_layout_box" } } } },
-  { "NvChad/nvim-colorizer.lua", opts = {
-    filetypes = { "*" }, user_default_options = {
-      names = true, RRGGBBAA = true, AARRGGBB = true, rgb_fn = true, hsl_fn = true,
-      css = true, css_fn = true, tailwind = true, mode = "virtualtext", always_update = true,
-    },
-  } },
-  { "stevearc/dressing.nvim", opts = { input = { mappings = { n = { q = "Close", k = "HistoryPrev", j = "HistoryNext" } } } } },
-  { "ethanholz/nvim-lastplace", opts = {} },
-  { "j-hui/fidget.nvim", opts = {
-    progress = { display = { progress_icon = { pattern = "moon" } } },
-    notification = { window = { relative = "editor", winblend = 0, border = "none" } },
-  } },
-  { "ThePrimeagen/harpoon", branch = "harpoon2", opts = {} },
-  { "akinsho/bufferline.nvim", opts = { options = {
-    diagnostics = "nvim_lsp", always_show_bufferline = true,
-    hover = { enabled = true, delay = 200, reveal = { "close" } },
+require("nvim-web-devicons").setup()
+require("catppuccin").setup({
+  flavour = "mocha", transparent_background = true,
+  integrations = { native_lsp = { enabled = true, underlines = {
+    errors = { "undercurl" }, hints = { "undercurl" },
+    warnings = { "undercurl" }, information = { "undercurl" },
   } } },
-  { "folke/noice.nvim", opts = {
-    presets = { bottom_search = true },
-    routes = {
-      { filter = { event = "msg_show", kind = { "shell_out" } }, view = "notify", opts = { level = "info", title = "stdout" } },
-      { filter = { event = "msg_show", kind = { "shell_err" } }, view = "notify", opts = { level = "error", title = "stderr" } },
+})
+vim.cmd.colorscheme("catppuccin")
+require("hephaestus.snacks")
+require("todo-comments").setup()
+require("neoscroll").setup()
+require("smart-splits").setup()
+require("flash").setup({ modes = { char = { enabled = false } } })
+require("which-key").setup({
+  preset = "helix", icons = { colors = false },
+  spec = {
+    { "<leader>b", group = "buffers" }, { "<leader><Tab>", group = "tabs" },
+    { "<leader>q", group = "quit/session" }, { "<leader>i", group = "insert" },
+    { "<leader>u", group = "UI" }, { "<leader>o", group = "open" },
+    { "<leader>d", group = "diff" }, { "<leader>c", group = "quickfix" },
+    { "<leader>s", group = "search" }, { "<leader>f", group = "file/find" },
+    { "<leader>g", group = "git" }, { "<leader>gh", group = "hunks" },
+    { "<leader>l", group = "LSP" }, { "<leader>p", group = "preview" },
+    { "<leader>R", group = "HTTP requests" },
+  },
+})
+require("Comment").setup({ toggler = { line = "<leader>/" }, opleader = { line = "<leader>/" } })
+require("nvim-surround").setup()
+require("nvim-autopairs").setup()
+require("trim").setup()
+require("stay-centered").setup()
+require("gx").setup()
+vim.keymap.set({ "n", "x" }, "gx", "<cmd>Browse<cr>")
+require("windows").setup({ ignore = { filetype = { "snacks_picker_list", "snacks_layout_box" } } })
+require("colorizer").setup({
+  filetypes = { "*" }, user_default_options = {
+    names = true, RRGGBBAA = true, AARRGGBB = true, rgb_fn = true, hsl_fn = true,
+    css = true, css_fn = true, tailwind = true, mode = "virtualtext", always_update = true,
+  },
+})
+require("dressing").setup({ input = { mappings = { n = { q = "Close", k = "HistoryPrev", j = "HistoryNext" } } } })
+require("nvim-lastplace").setup()
+require("fidget").setup({
+  progress = { display = { progress_icon = { pattern = "moon" } } },
+  notification = { window = { relative = "editor", winblend = 0, border = "none" } },
+})
+require("harpoon"):setup()
+require("bufferline").setup({ options = {
+  diagnostics = "nvim_lsp", always_show_bufferline = true,
+  hover = { enabled = true, delay = 200, reveal = { "close" } },
+} })
+require("noice").setup({
+  presets = { bottom_search = true },
+  routes = {
+    { filter = { event = "msg_show", kind = { "shell_out" } }, view = "notify", opts = { level = "info", title = "stdout" } },
+    { filter = { event = "msg_show", kind = { "shell_err" } }, view = "notify", opts = { level = "error", title = "stderr" } },
+  },
+  views = {
+    cmdline_popup = { position = { row = -2, col = "50%" }, border = { style = "none" } },
+    cmdline_popupmenu = { position = { row = -5, col = "50%" } },
+  },
+  lsp = {
+    override = {
+      ["vim.lsp.util.convert_input_to_markdown_lines"] = true,
+      ["vim.lsp.util.stylize_markdown"] = true, ["cmp.entry.get_documentation"] = true,
     },
-    views = {
-      cmdline_popup = { position = { row = -2, col = "50%" }, border = { style = "none" } },
-      cmdline_popupmenu = { position = { row = -5, col = "50%" } },
-    },
-    lsp = {
-      override = {
-        ["vim.lsp.util.convert_input_to_markdown_lines"] = true,
-        ["vim.lsp.util.stylize_markdown"] = true, ["cmp.entry.get_documentation"] = true,
-      },
-      hover = { enabled = false }, message = { enabled = false },
-      signature = { enabled = false }, progress = { enabled = false },
-    },
-  } },
-  { "sindrets/diffview.nvim", opts = {
-    file_panel = { win_config = { position = "right", width = 30 } },
-    keymaps = {
-      view = { { "n", "<leader>e", function() require("diffview.actions").toggle_files() end } },
-      file_panel = { { "n", "<leader>e", function() require("diffview.actions").toggle_files() end } },
-    },
-  } },
-  { "akinsho/git-conflict.nvim", opts = { default_mappings = true } },
-  { "lewis6991/gitsigns.nvim", opts = {
-    current_line_blame = true, preview_config = { border = "rounded" },
-  }, config = function(_, opts) require("gitsigns").setup(opts); require("hephaestus.git") end },
-  { "nvim-lualine/lualine.nvim", config = function() require("hephaestus.statusline") end },
-  { "rmagatti/auto-session", opts = {
-    auto_restore = true, git_use_branch_name = true,
-    session_lens = { picker_opts = { preview = true }, mappings = { delete_session = { "n", "d" } } },
-  } },
-  { "glacambre/firenvim", init = function()
-    vim.g.firenvim_config = {
-      globalSettings = { cmdline = "neovim", content = "text", priority = 0, selector = "textarea", takeover = "never" },
-      localSettings = { [".*"] = { takeover = "never", cmdline = "neovim" } },
-    }
-  end },
-  { "niksingh710/leetcode.nvim", commit = "cab77da208b0abca7070ef4213bc4cea1a339ada", cmd = "Leet", opts = { lang = "python3" } },
-  { "L3MON4D3/LuaSnip", opts = {} },
-  { "saghen/blink.cmp", version = "v1.10.2", opts = {
-    fuzzy = { implementation = "lua" },
-    snippets = { preset = "luasnip" },
-    completion = { menu = { border = "rounded" }, list = { selection = { preselect = false } } },
-    keymap = {
-      ["<C-j>"] = { "select_next", "fallback" }, ["<C-k>"] = { "select_prev", "fallback" },
-      ["<C-l>"] = { "snippet_forward", "fallback" }, ["<C-h>"] = { "snippet_backward", "fallback" },
-      ["<C-u>"] = { "scroll_documentation_up", "fallback" }, ["<C-d>"] = { "scroll_documentation_down", "fallback" },
-      ["<C-space>"] = { "select_and_accept", "fallback" },
-    },
-  } },
-  { "nvim-treesitter/nvim-treesitter", commit = "c6dd314086f7b471bf6c9110092a94ce1c06d220",
-    lazy = false, build = ":TSUpdate", config = function() require("hephaestus.treesitter").setup() end },
-  { "nvim-treesitter/nvim-treesitter-context", opts = { max_lines = 4, min_window_height = 40 } },
-  { "echasnovski/mini.ai", opts = {} },
-  { "tpope/vim-sleuth" },
-  { "mason-org/mason.nvim", opts = {} },
-  { "WhoIsSethDaniel/mason-tool-installer.nvim", dependencies = { "mason-org/mason.nvim" }, opts = {
-    ensure_installed = {
-      "tree-sitter-cli", "rust-analyzer", "goimports", "stylua", "nixfmt",
-      "shellcheck", "shellharden", "shfmt", "taplo", "typstyle", "fixjson",
-    },
-    auto_update = false, run_on_start = true,
-  } },
-  { "neovim/nvim-lspconfig", dependencies = {
-    "mason-org/mason.nvim", "mason-org/mason-lspconfig.nvim", "saghen/blink.cmp",
-  }, config = function() require("hephaestus.languages") end },
-  { "stevearc/conform.nvim", opts = {
-    default_format_opts = { lsp_format = "prefer" },
-    formatters_by_ft = {
-      ["_"] = { "squeeze_blanks", "trim_whitespace", "trim_newlines" },
-      xml = { "xmllint" }, json = { "fixjson" }, go = { "goimports" },
-      lua = { "stylua" }, nix = { "nixfmt" }, terraform = { "tofu_fmt" },
-      sh = { "shellcheck", "shellharden", "shfmt" }, bash = { "shellcheck", "shellharden", "shfmt" },
-      zsh = { "shellcheck", "shellharden", "shfmt" }, toml = { "taplo" }, typst = { "typstyle" },
-    },
-    formatters = { squeeze_blanks = { command = "cat" }, tofu_fmt = { command = "tofu", args = { "fmt", "-" }, stdin = true } },
-  }, config = function(_, opts)
-    require("conform").setup(opts)
-    vim.api.nvim_create_autocmd("BufWritePre", {
-      pattern = "*.go", callback = function() require("conform").format({ async = false }) end,
-    })
-  end },
-  { "folke/trouble.nvim", opts = {} },
-  { "rachartier/tiny-inline-diagnostic.nvim", opts = {} },
-  { "nvimdev/lspsaga.nvim", opts = {
-    lightbulb = { enable = false, virtual_text = false }, outline = { keys = { jump = "<cr>" } },
-    ui = { border = "rounded" }, scroll_preview = { scroll_down = "<C-d>", scroll_up = "<C-u>" },
-  } },
-  { "kevinhwang91/promise-async" },
-  { "kevinhwang91/nvim-ufo", opts = {
-    provider_selector = function() return { "lsp", "indent" } end,
-    preview = { mappings = { close = "q", switch = "K" } },
-  } },
-  { "mrcjkb/rustaceanvim", init = function()
-    vim.g.rustaceanvim = { server = { auto_attach = function() return vim.fn.executable("rust-analyzer") == 1 end } }
-  end },
-  { "saecki/crates.nvim", opts = {} },
-  { "HakonHarnes/img-clip.nvim", opts = {} },
-  { "iamcco/markdown-preview.nvim", ft = "markdown",
-    build = ":call mkdp#util#install_sync()", init = function()
-    vim.g.mkdp_echo_preview_url = 1
-    -- Keep the preview bound to loopback rather than exposing it to the LAN.
-    vim.g.mkdp_open_to_the_world = 0
-    vim.g.mkdp_browserfunc = "MkdpNoOp"
-    vim.cmd("function! MkdpNoOp(url)\nendfunction")
-  end },
-  { "MeanderingProgrammer/render-markdown.nvim", opts = {
-    ignore = function(buf)
-      return vim.api.nvim_buf_get_name(buf or 0):match("/leetcode/") ~= nil
-        or vim.bo[buf or 0].filetype == "leetcode.nvim"
-    end,
-    link = { wiki = { body = function(ctx)
-      if (ctx.text or ""):match("^[%d%s,%-%[%]%.\"']+$") then return false end
-    end } },
-  } },
-  { "ellisonleao/glow.nvim", cmd = "Glow", opts = {} },
-  { "chomosuke/typst-preview.nvim", opts = {} },
-  { "mistweaverco/kulala.nvim", ft = { "http", "rest" }, opts = {
-    global_keymaps = true, global_keymaps_prefix = "<leader>R", kulala_keymaps_prefix = "",
-  } },
-  { "windwp/nvim-ts-autotag", opts = {} },
-  { "folke/ts-comments.nvim", opts = {} },
-  { "mistricky/codesnap.nvim", build = "make", cmd = { "CodeSnap", "CodeSnapSave" }, opts = {
-    snapshot_config = {
-      background = { stops = { { color = "#00000000" }, { color = "#00000000" } } },
-      theme = "vercel@https://raw.githubusercontent.com/Railly/one-hunter-vscode/refs/heads/main/themes/OneHunter-Vercel-color-theme.json",
-      watermark = { content = "" },
-    },
-  } },
-  { "vyfor/cord.nvim", event = "VeryLazy", opts = { advanced = { server = {
-    auto_update = false,
-  } } } },
-  { "amitds1997/remote-nvim.nvim", cmd = "RemoteNvim", opts = {} },
-}
+    hover = { enabled = false }, message = { enabled = false },
+    signature = { enabled = false }, progress = { enabled = false },
+  },
+})
+require("diffview").setup({
+  file_panel = { win_config = { position = "right", width = 30 } },
+  keymaps = {
+    view = { { "n", "<leader>e", function() require("diffview.actions").toggle_files() end } },
+    file_panel = { { "n", "<leader>e", function() require("diffview.actions").toggle_files() end } },
+  },
+})
+require("git-conflict").setup({ default_mappings = true })
+require("gitsigns").setup({ current_line_blame = true, preview_config = { border = "rounded" } })
+require("hephaestus.git")
+require("hephaestus.statusline")
+require("auto-session").setup({
+  auto_restore = true, git_use_branch_name = true,
+  session_lens = { picker_opts = { preview = true }, mappings = { delete_session = { "n", "d" } } },
+})
+require("leetcode").setup({ lang = "python3" })
+require("luasnip").setup()
+require("blink.cmp").setup({
+  fuzzy = { implementation = "lua" },
+  snippets = { preset = "luasnip" },
+  completion = { menu = { border = "rounded" }, list = { selection = { preselect = false } } },
+  keymap = {
+    ["<C-j>"] = { "select_next", "fallback" }, ["<C-k>"] = { "select_prev", "fallback" },
+    ["<C-l>"] = { "snippet_forward", "fallback" }, ["<C-h>"] = { "snippet_backward", "fallback" },
+    ["<C-u>"] = { "scroll_documentation_up", "fallback" }, ["<C-d>"] = { "scroll_documentation_down", "fallback" },
+    ["<C-space>"] = { "select_and_accept", "fallback" },
+  },
+})
+require("mason").setup()
+require("hephaestus.languages")
+require("hephaestus.treesitter").setup()
+require("treesitter-context").setup({ max_lines = 4, min_window_height = 40 })
+require("mini.ai").setup()
+require("conform").setup({
+  default_format_opts = { lsp_format = "prefer" },
+  formatters_by_ft = {
+    ["_"] = { "squeeze_blanks", "trim_whitespace", "trim_newlines" },
+    xml = { "xmllint" }, json = { "fixjson" }, go = { "goimports" },
+    lua = { "stylua" }, nix = { "nixfmt" }, terraform = { "tofu_fmt" },
+    sh = { "shellcheck", "shellharden", "shfmt" }, bash = { "shellcheck", "shellharden", "shfmt" },
+    zsh = { "shellcheck", "shellharden", "shfmt" }, toml = { "taplo" }, typst = { "typstyle" },
+  },
+  formatters = { squeeze_blanks = { command = "cat" }, tofu_fmt = { command = "tofu", args = { "fmt", "-" }, stdin = true } },
+})
+vim.api.nvim_create_autocmd("BufWritePre", {
+  pattern = "*.go", callback = function() require("conform").format({ async = false }) end,
+})
+require("trouble").setup()
+require("tiny-inline-diagnostic").setup()
+require("lspsaga").setup({
+  lightbulb = { enable = false, virtual_text = false }, outline = { keys = { jump = "<cr>" } },
+  ui = { border = "rounded" }, scroll_preview = { scroll_down = "<C-d>", scroll_up = "<C-u>" },
+})
+require("ufo").setup({
+  provider_selector = function() return { "lsp", "indent" } end,
+  preview = { mappings = { close = "q", switch = "K" } },
+})
+require("crates").setup()
+require("img-clip").setup()
+require("render-markdown").setup({
+  ignore = function(buf)
+    return vim.api.nvim_buf_get_name(buf or 0):match("/leetcode/") ~= nil
+      or vim.bo[buf or 0].filetype == "leetcode.nvim"
+  end,
+  link = { wiki = { body = function(ctx)
+    if (ctx.text or ""):match("^[%d%s,%-%[%]%.\"']+$") then return false end
+  end } },
+})
+require("glow").setup()
+require("typst-preview").setup()
+local http_ready = false
+local function setup_http()
+  if http_ready or vim.fn.executable("tree-sitter") ~= 1 then return end
+  require("kulala").setup({ global_keymaps = true, global_keymaps_prefix = "<leader>R", kulala_keymaps_prefix = "" })
+  http_ready = true
+end
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = { "http", "rest" },
+  callback = function()
+    setup_http()
+    if not http_ready then
+      vim.notify("HTTP tooling is waiting for tree-sitter. See :Mason; retry :MasonToolsInstall.", vim.log.levels.WARN)
+    end
+  end,
+})
+vim.api.nvim_create_autocmd("User", { pattern = "MasonToolsUpdateCompleted", callback = setup_http })
+setup_http()
+require("nvim-ts-autotag").setup()
+require("ts-comments").setup()
+require("codesnap").setup({ snapshot_config = {
+  background = { stops = { { color = "#00000000" }, { color = "#00000000" } } },
+  theme = "vercel@https://raw.githubusercontent.com/Railly/one-hunter-vscode/refs/heads/main/themes/OneHunter-Vercel-color-theme.json",
+  watermark = { content = "" },
+} })
+require("cord").setup({ advanced = { server = { auto_update = false } } })
+require("remote-nvim").setup()
