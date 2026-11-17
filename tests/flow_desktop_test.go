@@ -67,6 +67,7 @@ esac
 type flowBuildOptions struct {
 	corruptChecksum bool
 	environment     []string
+	missingBinary   bool
 	version         string
 }
 
@@ -100,9 +101,11 @@ func runFlowBuild(t *testing.T, options flowBuildOptions) (output, calls string,
 		script = pattern.ReplaceAllString(script, checksum)
 	}
 	// Keep installation paths inside the disposable fixture, never on the host.
-	writeFile(t, filepath.Join(root, "flow"), "", 0o755)
+	if !options.missingBinary {
+		writeFile(t, filepath.Join(root, "flow-desktop-beta"), "", 0o755)
+	}
 	writeFile(t, filepath.Join(root, "Flow Beta.desktop"), "", 0o644)
-	script = strings.ReplaceAll(script, "/usr/bin/flow", filepath.Join(root, "flow"))
+	script = strings.ReplaceAll(script, "/usr/bin/flow-desktop-beta", filepath.Join(root, "flow-desktop-beta"))
 	script = strings.ReplaceAll(script, "/usr/share/applications/Flow Beta.desktop", filepath.Join(root, "Flow Beta.desktop"))
 	log := filepath.Join(root, "calls")
 	command := exec.Command("bash", "-c", script)
@@ -134,17 +137,26 @@ func assertCommandNotCalled(t *testing.T, calls, command string) {
 func TestFlowDesktop(t *testing.T) {
 	t.Run("UpdatedReleaseInstalled", func(t *testing.T) {
 		output, calls, ok := runFlowBuild(t, flowBuildOptions{
-			version:     "0.1.0-beta3",
-			environment: []string{"FLOW_PACKAGE_METADATA=flow-beta:0.1.0+beta3:1:x86_64", "FLOW_INSTALLED_METADATA=0.1.0+beta3:1:x86_64"},
+			version:     "0.1.0-beta4",
+			environment: []string{"FLOW_PACKAGE_METADATA=flow-beta:0.1.0+beta4:1:x86_64", "FLOW_INSTALLED_METADATA=0.1.0+beta4:1:x86_64"},
 		})
 		if !ok {
 			t.Fatal(output)
 		}
 		assertCommandCalled(t, calls, "dnf5")
 		assertCommandCalled(t, calls, "gst-inspect-1.0")
-		if !strings.Contains(calls, "Flow_0.1.0-beta3_linux_x86_64.rpm") {
+		if !strings.Contains(calls, "Flow_0.1.0-beta4_linux_x86_64.rpm") {
 			t.Fatalf("expected updated release package:\n%s", calls)
 		}
+	})
+
+	t.Run("MissingExecutableStopsBuild", func(t *testing.T) {
+		output, calls, ok := runFlowBuild(t, flowBuildOptions{missingBinary: true})
+		if ok || !strings.Contains(output, "Flow Desktop executable or desktop entry is missing") {
+			t.Fatalf("expected missing executable failure:\n%s", output)
+		}
+		assertCommandCalled(t, calls, "dnf5")
+		assertCommandNotCalled(t, calls, "gst-inspect-1.0")
 	})
 
 	t.Run("UnexpectedPackageIdentityPreventsInstallation", func(t *testing.T) {

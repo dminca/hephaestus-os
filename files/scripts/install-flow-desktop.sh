@@ -6,13 +6,13 @@ if [[ "$(uname -s)" != Linux || "$(uname -m)" != x86_64 ]]; then
   exit 1
 fi
 
-version=v0.1.0-beta3 # renovate: datasource=github-releases depName=Flow-Tube/Flow-Desktop
+version=v0.1.0-beta4 # renovate: datasource=github-releases depName=Flow-Tube/Flow-Desktop
 release_version="${version#v}"
 # Tauri encodes the prerelease separator as '+' in RPM metadata.
 rpm_version="${release_version/-/+}"
 filename="Flow_${release_version}_linux_x86_64.rpm"
 url="https://github.com/Flow-Tube/Flow-Desktop/releases/download/${version}/${filename}"
-checksum=dbe73c7166db3cc4251a319c6a425e14e4c5ae0dd55b428547fad9708c90a517
+checksum=cc5336fac2512df358de9a7513e13f5289c0643ad0964d48a48c061ff01217de
 # Pinned updater key from the v0.1.0-beta2 release's tauri.conf.json.
 public_key=RWQpaRLd6yhk18G30wcoSsrlLXi8bjGYFcC4gMCiYs/Ms5xKMe3P7qpR
 temporary=$(mktemp -d)
@@ -40,8 +40,10 @@ if [[ "$installed_identity" != "$expected_identity" ]]; then
   printf 'Unexpected installed Flow RPM identity: expected %s, got %s\n' "$expected_identity" "$installed_identity" >&2
   exit 1
 fi
-test -x /usr/bin/flow
-test -f '/usr/share/applications/Flow Beta.desktop'
+if [[ ! -x /usr/bin/flow-desktop-beta || ! -f '/usr/share/applications/Flow Beta.desktop' ]]; then
+  printf '%s\n' 'Flow Desktop executable or desktop entry is missing.' >&2
+  exit 1
+fi
 
 if ! GST_REGISTRY="$temporary/gstreamer-registry.bin" \
   gst-inspect-1.0 avdec_h264 > "$temporary/h264.log" 2>&1; then
