@@ -45,7 +45,7 @@ jobs:
           .github/renovate/node_modules/.bin/renovate-config-validator --strict renovate.json5
           node --test tests/renovate-config.test.cjs tests/dependencies/node-runtime.test.cjs tests/dependencies/npm-install.test.cjs tests/dependencies/renovate-policy.test.cjs
 
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7
         with:
           go-version-file: go.mod
 
