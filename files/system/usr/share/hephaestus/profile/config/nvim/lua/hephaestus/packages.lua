@@ -39,7 +39,7 @@ M.specs = {
   { src = "https://github.com/niksingh710/leetcode.nvim", version = "cab77da208b0abca7070ef4213bc4cea1a339ada" }, -- held
   { src = "https://github.com/L3MON4D3/LuaSnip", version = "0abc8f390b278c3b4aabc4c004ac8a088b65cf24" },
   { src = "https://github.com/saghen/blink.cmp", version = "v1.10.2" },
-  { src = "https://github.com/nvim-treesitter/nvim-treesitter", version = "0bf28a34f1da3259809807d4b4b63c93aa9055aa" }, -- held
+  { src = "https://github.com/nvim-treesitter/nvim-treesitter", version = "b706d642dd20d0922e7e92365dc73617f0fdb4ea" }, -- held
   { src = "https://github.com/nvim-treesitter/nvim-treesitter-context", version = "8decd73460d26ef0a0befb745d022dd1fc2c38b8" },
   { src = "https://github.com/echasnovski/mini.ai", version = "c2e6e88a9de01b5aec5c3cffee1277b9ac8a6d69" },
   { src = "https://github.com/tpope/vim-sleuth", version = "be69bff86754b1aa5adcbb527d7fcd1635a84080" },
@@ -52,11 +52,11 @@ M.specs = {
   { src = "https://github.com/nvimdev/lspsaga.nvim", version = "cf6fc9473bba1d332eda9887855ea29ed9b37701" },
   { src = "https://github.com/kevinhwang91/promise-async", version = "119e8961014c9bfaf1487bf3c2a393d254f337e2" },
   { src = "https://github.com/kevinhwang91/nvim-ufo", version = "ab3eb124062422d276fae49e0dd63b3ad1062cfc" },
-  { src = "https://github.com/mrcjkb/rustaceanvim", version = "88aa21f9466b7b62937c60074774faf73e12de64" },
+  { src = "https://github.com/mrcjkb/rustaceanvim", version = "3afd765a9eb1d243a82f6f2dda95a3721cb8ddef" },
   { src = "https://github.com/saecki/crates.nvim", version = "7039bc1d130e424232a7aa64ceddb170a154ff5b" },
   { src = "https://github.com/HakonHarnes/img-clip.nvim", version = "99848daf801789dbebe2192b475eb887d375002c" },
   { src = "https://github.com/iamcco/markdown-preview.nvim", version = "a923f5fc5ba36a3b17e289dc35dc17f66d0548ee" },
-  { src = "https://github.com/MeanderingProgrammer/render-markdown.nvim", version = "8801162e041e34c64d0d1397cd1f353a14b01950" },
+  { src = "https://github.com/MeanderingProgrammer/render-markdown.nvim", version = "a67f826164c38c836fc6060f32b275c4c43317a7" },
   { src = "https://github.com/ellisonleao/glow.nvim", version = "5d5954b2f22e109d4a6eba8b2618c5b96e4ee7a2" },
   { src = "https://github.com/chomosuke/typst-preview.nvim", version = "b231e0e318378782b210ab57aaf7d81d3b0eea12" },
   { src = "https://github.com/mistweaverco/kulala.nvim", version = "b2c4fc8bb54c5c57aa18933b4c08f8d040f69e0b" },
