@@ -1,7 +1,7 @@
 local M = {}
 M.languages = {
   "bash", "c", "cpp", "css", "cue", "diff", "dockerfile", "git_config", "git_rebase",
-  "gitattributes", "gitcommit", "gitignore", "go", "gomod", "gosum", "gowork", "haskell",
+  "gitattributes", "gitcommit", "gitignore", "go", "gomod", "gosum", "gowork",
   "hcl", "html", "http", "javascript", "jsdoc", "json", "lua", "luadoc",
   "markdown", "markdown_inline", "nix", "python", "query", "regex", "rust", "scss",
   "svelte", "toml", "tsx", "typescript", "typst", "vim", "vimdoc", "xml", "yaml",

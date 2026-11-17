@@ -9,7 +9,6 @@ M.servers = {
   emmet_ls = { "emmet-ls", requires = { "node", "npm" } },
   eslint = { "eslint-lsp", requires = { "node", "npm" } },
   gopls = { "gopls", requires = { "go" } },
-  hls = { "haskell-language-server", requires = { "ghcup", "ghc" } },
   html = { "html-lsp", requires = { "node", "npm" } },
   jsonls = { "json-lsp", requires = { "node", "npm" } },
   lua_ls = { "lua-language-server" },
