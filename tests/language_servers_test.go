@@ -50,19 +50,20 @@ for _, tool in ipairs(options.ensure_installed) do
   tools[tool[1]] = tool
 end
 assert(tools["marksman"].condition())
-assert(not tools["gopls"].condition() and not tools["haskell-language-server"].condition())
+assert(not tools["gopls"].condition() and not tools["haskell-language-server"])
+assert(not vim.lsp.config.hls, "Haskell language server must not be configured")
 assert(not tools["yaml-language-server"].condition() and not tools["nil"].condition())
 assert(not tools["goimports"].condition() and not tools["fixjson"].condition())
-assert(#messages >= 6 and messages[1]:find("missing"))
-for _, binary in ipairs({ "go", "node", "npm", "ghcup", "ghc", "cargo", "rustc", "cc" }) do
+assert(#messages >= 5 and messages[1]:find("missing"))
+for _, binary in ipairs({ "go", "node", "npm", "cargo", "rustc", "cc" }) do
   installed[binary] = true
 end
 for _, tool in pairs(tools) do assert(tool.condition(), tool[1]) end
 assert(vim.tbl_isempty(enabled), "missing servers must not be enabled")
-installed.gopls, installed["yaml-language-server"], installed.hls = true, true, true
+installed.gopls, installed["yaml-language-server"] = true, true
 vim.api.nvim_exec_autocmds("User", { pattern = "MasonToolsUpdateCompleted" })
 vim.wait(100, function() return enabled.gopls end)
-assert(enabled.gopls and enabled.yamlls and enabled.hls)
+assert(enabled.gopls and enabled.yamlls and not enabled.hls)
 installed.svelteserver = true
 events["package:install:success"]()
 vim.wait(100, function() return enabled.svelte end)

@@ -14,7 +14,7 @@ local servers = {
     gofumpt = true, usePlaceholders = true, completeUnimported = true,
     semanticTokens = true, staticcheck = true,
   } } },
-  cue = {}, hls = {}, nil_ls = {}, tofu_ls = {}, ruff = {},
+  cue = {}, nil_ls = {}, tofu_ls = {}, ruff = {},
   lua_ls = { settings = { Lua = { diagnostics = {
     disable = { "miss-name" }, globals = { "vim", "cmp", "Snacks" },
   } } } },

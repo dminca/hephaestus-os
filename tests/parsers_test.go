@@ -39,7 +39,10 @@ package.preload["nvim-treesitter"] = function()
     end,
     install = function(languages, options)
       installs = installs + 1
-      assert(#languages == 42 and options.max_jobs == 4)
+      assert(#languages == 41 and options.max_jobs == 4)
+      for _, language in ipairs(languages) do
+        assert(language ~= "haskell", "Haskell parser must not be installed")
+      end
       return { await = function(_, callback)
         vim.defer_fn(function() callback(nil, mode ~= "failed") end, 10)
       end }
