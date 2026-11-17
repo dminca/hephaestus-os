@@ -40,8 +40,10 @@ if [[ "$installed_identity" != "$expected_identity" ]]; then
   printf 'Unexpected installed Flow RPM identity: expected %s, got %s\n' "$expected_identity" "$installed_identity" >&2
   exit 1
 fi
-test -x /usr/bin/flow
-test -f '/usr/share/applications/Flow Beta.desktop'
+if [[ ! -x /usr/bin/flow-desktop-beta || ! -f '/usr/share/applications/Flow Beta.desktop' ]]; then
+  printf '%s\n' 'Flow Desktop executable or desktop entry is missing.' >&2
+  exit 1
+fi
 
 if ! GST_REGISTRY="$temporary/gstreamer-registry.bin" \
   gst-inspect-1.0 avdec_h264 > "$temporary/h264.log" 2>&1; then
