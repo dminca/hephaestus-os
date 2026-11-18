@@ -7,7 +7,7 @@
     "node": "^24.11.0",
     "npm": "^11.0.0"
   },
-  "packageManager": "npm@11.21.2",
+  "packageManager": "npm@11.21.3",
   "dependencies": {
     "@mermaid-js/mermaid-cli": "12.2.0"
   }
