@@ -39,13 +39,13 @@ M.specs = {
   { src = "https://github.com/niksingh710/leetcode.nvim", version = "cab77da208b0abca7070ef4213bc4cea1a339ada" }, -- held
   { src = "https://github.com/L3MON4D3/LuaSnip", version = "0abc8f390b278c3b4aabc4c004ac8a088b65cf24" },
   { src = "https://github.com/saghen/blink.cmp", version = "v1.10.2" },
-  { src = "https://github.com/nvim-treesitter/nvim-treesitter", version = "b706d642dd20d0922e7e92365dc73617f0fdb4ea" }, -- held
+  { src = "https://github.com/nvim-treesitter/nvim-treesitter", version = "37e52c733ada9d8d544d53a763140ef1ba404353" }, -- held
   { src = "https://github.com/nvim-treesitter/nvim-treesitter-context", version = "8decd73460d26ef0a0befb745d022dd1fc2c38b8" },
   { src = "https://github.com/echasnovski/mini.ai", version = "c2e6e88a9de01b5aec5c3cffee1277b9ac8a6d69" },
   { src = "https://github.com/tpope/vim-sleuth", version = "be69bff86754b1aa5adcbb527d7fcd1635a84080" },
   { src = "https://github.com/mason-org/mason.nvim", version = "2a6940af80375532e5e9e7c1f2fc6319a1b7a69d" },
   { src = "https://github.com/WhoIsSethDaniel/mason-tool-installer.nvim", version = "443f1ef8b5e6bf47045cb2217b6f748a223cf7dc" },
-  { src = "https://github.com/neovim/nvim-lspconfig", version = "e1c6a5a45d95ad22cf55c874db2ff8ab969556f0" },
+  { src = "https://github.com/neovim/nvim-lspconfig", version = "4648fd8ba5c678d7e2db75ae44ffac269bb589d8" },
   { src = "https://github.com/stevearc/conform.nvim", version = "016802de402556da54c36bd7359b441266b01cdd" },
   { src = "https://github.com/folke/trouble.nvim", version = "bd67efe408d4816e25e8491cc5ad4088e708a69a" },
   { src = "https://github.com/rachartier/tiny-inline-diagnostic.nvim", version = "46ae9b3c8f3039e96ff4497d190ad0aee091f30d" },
@@ -59,7 +59,7 @@ M.specs = {
   { src = "https://github.com/MeanderingProgrammer/render-markdown.nvim", version = "a67f826164c38c836fc6060f32b275c4c43317a7" },
   { src = "https://github.com/ellisonleao/glow.nvim", version = "5d5954b2f22e109d4a6eba8b2618c5b96e4ee7a2" },
   { src = "https://github.com/chomosuke/typst-preview.nvim", version = "b231e0e318378782b210ab57aaf7d81d3b0eea12" },
-  { src = "https://github.com/mistweaverco/kulala.nvim", version = "b2c4fc8bb54c5c57aa18933b4c08f8d040f69e0b" },
+  { src = "https://github.com/mistweaverco/kulala.nvim", version = "de0e6370e4ffa1a8da95cb4ff9b8a3057e0ac6e5" },
   { src = "https://github.com/windwp/nvim-ts-autotag", version = "d7220b55e16ed3c04e88086256def5d282429493" },
   { src = "https://github.com/folke/ts-comments.nvim", version = "a59d6092213447450191122c9346f309161504cb" },
   { src = "https://github.com/mistricky/codesnap.nvim", version = "fccc5c7a2a10ad04da83d0263d50dde7f6da2430" },
