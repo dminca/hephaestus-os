@@ -52,7 +52,7 @@ M.specs = {
   { src = "https://github.com/nvimdev/lspsaga.nvim", version = "cf6fc9473bba1d332eda9887855ea29ed9b37701" },
   { src = "https://github.com/kevinhwang91/promise-async", version = "119e8961014c9bfaf1487bf3c2a393d254f337e2" },
   { src = "https://github.com/kevinhwang91/nvim-ufo", version = "ab3eb124062422d276fae49e0dd63b3ad1062cfc" },
-  { src = "https://github.com/mrcjkb/rustaceanvim", version = "8d01bdea498b77a34cf84d9dc04a8e5bef459918" },
+  { src = "https://github.com/mrcjkb/rustaceanvim", version = "c9df24e582b1c77b53da2eafc63e4ed5fea0f4ee" },
   { src = "https://github.com/saecki/crates.nvim", version = "7039bc1d130e424232a7aa64ceddb170a154ff5b" },
   { src = "https://github.com/HakonHarnes/img-clip.nvim", version = "99848daf801789dbebe2192b475eb887d375002c" },
   { src = "https://github.com/iamcco/markdown-preview.nvim", version = "a923f5fc5ba36a3b17e289dc35dc17f66d0548ee" },
