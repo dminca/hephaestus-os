@@ -34,9 +34,9 @@
     },
     {
       "repository": "simoarpe/ziggity",
-      "version": "v0.62.0",
-      "url": "https://github.com/simoarpe/ziggity/releases/download/v0.62.0/ziggity-v0.62.0-x86_64-linux-musl.tar.gz",
-      "sha256": "eb65f54e399ee2bf479e21746b5b54b268a8a365fbf3492310860623612503c4",
+      "version": "v0.63.0",
+      "url": "https://github.com/simoarpe/ziggity/releases/download/v0.63.0/ziggity-v0.63.0-x86_64-linux-musl.tar.gz",
+      "sha256": "4593a1b91cec2bd47673f147af3c23cf66c0abdff0c726bf2d1fc4c220d1955b",
       "binaries": [
         "ziggity"
       ],
