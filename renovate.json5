@@ -13,7 +13,7 @@
   "lockFileMaintenance": {
     "enabled": true,
     "schedule": ["before 7am on Monday"],
-    "automerge": false,
+    "automerge": true,
     "groupName": "dependency lockfile maintenance"
   },
   "customManagers": [
