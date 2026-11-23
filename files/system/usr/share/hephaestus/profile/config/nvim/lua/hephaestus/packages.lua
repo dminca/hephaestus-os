@@ -39,20 +39,20 @@ M.specs = {
   { src = "https://github.com/niksingh710/leetcode.nvim", version = "cab77da208b0abca7070ef4213bc4cea1a339ada" }, -- held
   { src = "https://github.com/L3MON4D3/LuaSnip", version = "0abc8f390b278c3b4aabc4c004ac8a088b65cf24" },
   { src = "https://github.com/saghen/blink.cmp", version = "v1.10.2" },
-  { src = "https://github.com/nvim-treesitter/nvim-treesitter", version = "37e52c733ada9d8d544d53a763140ef1ba404353" }, -- held
+  { src = "https://github.com/nvim-treesitter/nvim-treesitter", version = "52773f0d13a0c11d0c3ef33c14ab6ecc1c17148b" }, -- held
   { src = "https://github.com/nvim-treesitter/nvim-treesitter-context", version = "8decd73460d26ef0a0befb745d022dd1fc2c38b8" },
   { src = "https://github.com/echasnovski/mini.ai", version = "813d10a43d5d4eda4816e6a27eb6bf6250f75ea8" },
   { src = "https://github.com/tpope/vim-sleuth", version = "be69bff86754b1aa5adcbb527d7fcd1635a84080" },
   { src = "https://github.com/mason-org/mason.nvim", version = "2a6940af80375532e5e9e7c1f2fc6319a1b7a69d" },
   { src = "https://github.com/WhoIsSethDaniel/mason-tool-installer.nvim", version = "443f1ef8b5e6bf47045cb2217b6f748a223cf7dc" },
-  { src = "https://github.com/neovim/nvim-lspconfig", version = "4648fd8ba5c678d7e2db75ae44ffac269bb589d8" },
+  { src = "https://github.com/neovim/nvim-lspconfig", version = "7d22e678970d95d8d18494ec389c52b07111c53a" },
   { src = "https://github.com/stevearc/conform.nvim", version = "016802de402556da54c36bd7359b441266b01cdd" },
   { src = "https://github.com/folke/trouble.nvim", version = "bd67efe408d4816e25e8491cc5ad4088e708a69a" },
   { src = "https://github.com/rachartier/tiny-inline-diagnostic.nvim", version = "46ae9b3c8f3039e96ff4497d190ad0aee091f30d" },
   { src = "https://github.com/nvimdev/lspsaga.nvim", version = "cf6fc9473bba1d332eda9887855ea29ed9b37701" },
   { src = "https://github.com/kevinhwang91/promise-async", version = "119e8961014c9bfaf1487bf3c2a393d254f337e2" },
   { src = "https://github.com/kevinhwang91/nvim-ufo", version = "ab3eb124062422d276fae49e0dd63b3ad1062cfc" },
-  { src = "https://github.com/mrcjkb/rustaceanvim", version = "e505aadad1a57d8d96b9fe5ce2bc0e5005264c48" },
+  { src = "https://github.com/mrcjkb/rustaceanvim", version = "d4ade53789266bc54d4f194dc91f6c73233c327d" },
   { src = "https://github.com/saecki/crates.nvim", version = "7039bc1d130e424232a7aa64ceddb170a154ff5b" },
   { src = "https://github.com/HakonHarnes/img-clip.nvim", version = "99848daf801789dbebe2192b475eb887d375002c" },
   { src = "https://github.com/iamcco/markdown-preview.nvim", version = "a923f5fc5ba36a3b17e289dc35dc17f66d0548ee" },
