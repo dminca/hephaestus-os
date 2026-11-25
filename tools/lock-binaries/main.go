@@ -24,7 +24,7 @@ type artifactSpec struct {
 
 var artifacts = []artifactSpec{
 	{
-		repository: "cue-lang/cue", version: "v0.17.1",
+		repository: "cue-lang/cue", version: "v0.18.0",
 		filename: "cue_{version}_linux_amd64.tar.gz",
 		binaries: []string{"cue"}, license: "Apache-2.0",
 	},
