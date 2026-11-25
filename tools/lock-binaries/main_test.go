@@ -80,7 +80,7 @@ func TestIncompleteReleaseMetadataPreservesLock(t *testing.T) {
 	for name, response := range map[string]string{
 		"MalformedJSON": "{",
 		"MissingAssets": `{}`,
-		"MissingURL":    `{"assets":[{"name":"cue_v0.17.1_linux_amd64.tar.gz"}]}`,
+		"MissingURL":    `{"assets":[{"name":"cue_v0.18.0_linux_amd64.tar.gz"}]}`,
 	} {
 		t.Run(name, func(t *testing.T) {
 			root := t.TempDir()
