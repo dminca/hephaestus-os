@@ -3,9 +3,9 @@
   "artifacts": [
     {
       "repository": "cue-lang/cue",
-      "version": "v0.17.1",
-      "url": "https://github.com/cue-lang/cue/releases/download/v0.17.1/cue_v0.17.1_linux_amd64.tar.gz",
-      "sha256": "a39b0c97695069d95d276d99be0f5dbabb081d801bfdc9ba49b76efaf94e2369",
+      "version": "v0.18.0",
+      "url": "https://github.com/cue-lang/cue/releases/download/v0.18.0/cue_v0.18.0_linux_amd64.tar.gz",
+      "sha256": "6f763cc20c42174344fbead70737714d63a50c3fa7ec71179e67974c4f9c5f81",
       "binaries": [
         "cue"
       ],
